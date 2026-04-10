@@ -1,3 +1,3 @@
-import { SettingsScreen } from "../../src/features/settings/screens/SettingsScreen";
+import { NotificationsScreen } from "../../features/notifications";
 
-export default SettingsScreen;
+export default NotificationsScreen;

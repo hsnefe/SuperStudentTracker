@@ -1,3 +1,3 @@
-import { TasksScreen } from "../../src/features/tasks/screens/TasksScreen";
+import { TasksScreen } from "../../features/tasks";
 
 export default TasksScreen;

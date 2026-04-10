@@ -1,3 +1,3 @@
-import { HomeScreen } from "../../src/features/home/screens/HomeScreen";
+import { ScheduleScreen } from "../../features/schedule";
 
-export default HomeScreen;
+export default ScheduleScreen;
