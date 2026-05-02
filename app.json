@@ -4,38 +4,44 @@
     "slug": "SuperStudentTracker",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/icon.png",
+    "scheme": "superstudenttracker",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
-      "supportsTablet": false
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.superstudenttracker.app"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       "expo-router",
       "expo-sqlite",
       [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "backgroundColor": "#0b0b0c"
+          }
+        }
+      ],
+      [
         "expo-notifications",
         {
-          "icon": "./assets/icon.png",
+          "icon": "./assets/images/icon.png",
           "color": "#111827"
         }
       ]
-    ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }

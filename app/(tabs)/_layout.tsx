@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
-import { useTheme } from "../../hooks";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "@/hooks";
 
 export default function TabsLayout() {
   const { colors } = useTheme();
@@ -18,11 +19,51 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: colors.textMuted,
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Home" }} />
-      <Tabs.Screen name="schedule" options={{ title: "Schedule" }} />
-      <Tabs.Screen name="courses" options={{ title: "Courses" }} />
-      <Tabs.Screen name="tasks" options={{ title: "Tasks" }} />
-      <Tabs.Screen name="settings" options={{ title: "Settings" }} />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="schedule"
+        options={{
+          title: "Schedule",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="courses"
+        options={{
+          title: "Courses",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="book-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="tasks"
+        options={{
+          title: "Tasks",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="checkbox-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: "Settings",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" size={size} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

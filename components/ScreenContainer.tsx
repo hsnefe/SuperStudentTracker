@@ -1,21 +1,44 @@
-import { PropsWithChildren } from "react";
-import { StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useTheme } from "../hooks";
+import type { ReactNode } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { useTheme } from "@/hooks";
 
-export function ScreenContainer({ children }: PropsWithChildren) {
-  const { colors } = useTheme();
+type Props = {
+  children: ReactNode;
+  scroll?: boolean;
+};
 
-  return (
-    <SafeAreaView
-      edges={["left", "right", "bottom"]}
-      style={[styles.container, { backgroundColor: colors.background }]}
+export function ScreenContainer({ children, scroll = true }: Props) {
+  const { colors, spacing } = useTheme();
+
+  const inner = (
+    <View
+      style={[
+        styles.inner,
+        { paddingHorizontal: spacing.lg, paddingVertical: spacing.lg, gap: spacing.md },
+      ]}
     >
       {children}
-    </SafeAreaView>
+    </View>
+  );
+
+  if (!scroll) {
+    return (
+      <View style={[styles.root, { backgroundColor: colors.background }]}>{inner}</View>
+    );
+  }
+
+  return (
+    <ScrollView
+      style={[styles.root, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.scrollContent}
+    >
+      {inner}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 20, paddingTop: 16 },
+  root: { flex: 1 },
+  inner: { flex: 1 },
+  scrollContent: { flexGrow: 1 },
 });

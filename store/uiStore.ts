@@ -1,11 +1,11 @@
 import { create } from "zustand";
 
 type UiState = {
-  selectedDate: string;
-  setSelectedDate: (value: string) => void;
+  bootedAt: number;
+  setBootedAt: (value: number) => void;
 };
 
 export const useUiStore = create<UiState>((set) => ({
-  selectedDate: new Date().toISOString().slice(0, 10),
-  setSelectedDate: (value) => set({ selectedDate: value }),
+  bootedAt: Date.now(),
+  setBootedAt: (value) => set({ bootedAt: value }),
 }));

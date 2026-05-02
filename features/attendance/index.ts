@@ -1,1 +1,1 @@
-export const attendanceFeature = { name: "attendance" };
+export {};

@@ -1,18 +1,12 @@
-import { Text } from "react-native";
-import { PlaceholderCard, ScreenContainer } from "../../../components";
-import { useTheme } from "../../../hooks";
+import { ScreenContainer, PlaceholderCard } from "@/components";
 
 export function CoursesScreen() {
-  const { colors } = useTheme();
-
   return (
     <ScreenContainer>
-      <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: "700", marginBottom: 16 }}>
-        Courses
-      </Text>
       <PlaceholderCard
-        title="Course List"
-        description="Track current classes, instructors, and grade targets."
+        title="Courses"
+        description="Manage your enrolled courses and access their materials."
+        hint="Phase 1 — coming next: add course, edit color, link schedule."
       />
     </ScreenContainer>
   );

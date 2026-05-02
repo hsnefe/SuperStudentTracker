@@ -1,43 +1,27 @@
-import {
-  createContext,
-  PropsWithChildren,
-  useContext,
-  useMemo,
-  useState,
-} from "react";
-import { AppTheme, darkTheme, lightTheme } from "./tokens";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { lightColors, radius, spacing, typography, type ThemeColors } from "./tokens";
 
-type ThemeMode = "light" | "dark";
-
-type ThemeContextValue = {
-  mode: ThemeMode;
-  theme: AppTheme;
-  toggleTheme: () => void;
+export type Theme = {
+  colors: ThemeColors;
+  spacing: typeof spacing;
+  radius: typeof radius;
+  typography: typeof typography;
 };
 
-const ThemeContext = createContext<ThemeContextValue | null>(null);
+const lightTheme: Theme = {
+  colors: lightColors,
+  spacing,
+  radius,
+  typography,
+};
 
-export function ThemeProvider({ children }: PropsWithChildren) {
-  const [mode, setMode] = useState<ThemeMode>("light");
+const ThemeContext = createContext<Theme>(lightTheme);
 
-  const value = useMemo(
-    () => ({
-      mode,
-      theme: mode === "light" ? lightTheme : darkTheme,
-      toggleTheme: () => {
-        setMode((current) => (current === "light" ? "dark" : "light"));
-      },
-    }),
-    [mode],
-  );
-
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const value = useMemo<Theme>(() => lightTheme, []);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
-export function useThemeContext() {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error("useThemeContext must be used within ThemeProvider");
-  }
-  return context;
+export function useThemeContext(): Theme {
+  return useContext(ThemeContext);
 }

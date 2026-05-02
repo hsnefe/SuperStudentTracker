@@ -1,1 +1,1 @@
-export const authFeature = { name: "auth" };
+export {};

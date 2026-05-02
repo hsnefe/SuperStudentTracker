@@ -1,3 +1,5 @@
-import { TasksScreen } from "../../features/tasks";
+import { TasksScreen } from "@/features/tasks";
 
-export default TasksScreen;
+export default function TasksRoute() {
+  return <TasksScreen />;
+}

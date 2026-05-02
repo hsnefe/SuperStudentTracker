@@ -1,39 +1,39 @@
-import { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { useTheme } from "../hooks";
+import { useTheme } from "@/hooks";
 
-type PlaceholderCardProps = {
+type Props = {
   title: string;
-  description: string;
-  rightSlot?: ReactNode;
+  description?: string;
+  hint?: string;
 };
 
-export function PlaceholderCard({ title, description, rightSlot }: PlaceholderCardProps) {
-  const { colors } = useTheme();
+export function PlaceholderCard({ title, description, hint }: Props) {
+  const { colors, radius, spacing, typography } = useTheme();
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <View style={styles.textContent}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
-        <Text style={[styles.description, { color: colors.textSecondary }]}>{description}</Text>
-      </View>
-      {rightSlot}
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          borderRadius: radius.lg,
+          padding: spacing.lg,
+          gap: spacing.sm,
+        },
+      ]}
+    >
+      <Text style={[typography.heading, { color: colors.textPrimary }]}>{title}</Text>
+      {description ? (
+        <Text style={[typography.body, { color: colors.textSecondary }]}>{description}</Text>
+      ) : null}
+      {hint ? (
+        <Text style={[typography.caption, { color: colors.textMuted }]}>{hint}</Text>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 12,
-  },
-  textContent: { flex: 1 },
-  title: { fontSize: 16, fontWeight: "600", marginBottom: 4 },
-  description: { fontSize: 14, lineHeight: 20 },
+  card: { borderWidth: 1 },
 });

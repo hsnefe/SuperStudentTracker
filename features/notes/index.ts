@@ -1,1 +1,1 @@
-export const notesFeature = { name: "notes" };
+export {};

@@ -1,3 +1,5 @@
-import { ScheduleScreen } from "../../features/schedule";
+import { ScheduleScreen } from "@/features/schedule";
 
-export default ScheduleScreen;
+export default function ScheduleRoute() {
+  return <ScheduleScreen />;
+}

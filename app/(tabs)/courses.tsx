@@ -1,3 +1,5 @@
-import { CoursesScreen } from "../../features/courses";
+import { CoursesScreen } from "@/features/courses";
 
-export default CoursesScreen;
+export default function CoursesRoute() {
+  return <CoursesScreen />;
+}

@@ -1,9 +1,9 @@
-export * from "./auth";
-export * from "./courses";
-export * from "./schedule";
-export * from "./attendance";
-export * from "./grades";
-export * from "./notes";
-export * from "./tasks";
-export * from "./materials";
-export * from "./notifications";
+export * as attendance from "./attendance";
+export * as auth from "./auth";
+export * as courses from "./courses";
+export * as grades from "./grades";
+export * as materials from "./materials";
+export * as notes from "./notes";
+export * as notifications from "./notifications";
+export * as schedule from "./schedule";
+export * as tasks from "./tasks";

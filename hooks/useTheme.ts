@@ -1,6 +1,5 @@
-import { useThemeContext } from "../lib/theme";
+import { useThemeContext, type Theme } from "@/lib/theme";
 
-export function useTheme() {
-  const { theme, mode, toggleTheme } = useThemeContext();
-  return { ...theme, mode, toggleTheme };
+export function useTheme(): Theme {
+  return useThemeContext();
 }
