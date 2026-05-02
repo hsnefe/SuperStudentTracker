@@ -33,6 +33,13 @@ export type Task = {
   done: boolean;
 };
 
+export type Assignment = {
+  id: string;
+  title: string;
+  description: string;
+  tasks: Task[];
+};
+
 export type GradeComponent = {
   id: string;
   courseId: string;

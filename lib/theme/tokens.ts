@@ -1,18 +1,17 @@
+/** Solid UI palette; assignment description strips use a separate gradient (accent → highlight). */
 export const palette = {
+  primaryDark: "#1E104E",
+  secondaryDark: "#452E5A",
+  accent: "#FF653F",
+  highlight: "#FFC85C",
   white: "#ffffff",
-  ink900: "#0f1115",
-  ink700: "#1f2330",
-  ink500: "#3b4252",
-  ink300: "#7a8194",
-  ink100: "#cfd3dc",
-  background: "#fafafa",
-  surface: "#ffffff",
-  border: "#e6e8ee",
-  accent: "#111827",
-  accentMuted: "#374151",
-  success: "#16a34a",
-  danger: "#dc2626",
-  warning: "#d97706",
+  borderOnDark: "rgba(255,255,255,0.14)",
+  textOnDark: "#f4f4f8",
+  textOnDarkSecondary: "rgba(244,244,248,0.78)",
+  textOnDarkMuted: "rgba(244,244,248,0.5)",
+  success: "#4ade80",
+  danger: "#f87171",
+  warning: "#fbbf24",
 } as const;
 
 export const spacing = {
@@ -47,20 +46,26 @@ export type ThemeColors = {
   textMuted: string;
   accent: string;
   accentMuted: string;
+  highlight: string;
+  primaryDark: string;
+  secondaryDark: string;
   success: string;
   danger: string;
   warning: string;
 };
 
 export const lightColors: ThemeColors = {
-  background: palette.background,
-  surface: palette.surface,
-  border: palette.border,
-  textPrimary: palette.ink900,
-  textSecondary: palette.ink500,
-  textMuted: palette.ink300,
+  background: palette.primaryDark,
+  surface: palette.secondaryDark,
+  border: palette.borderOnDark,
+  textPrimary: palette.textOnDark,
+  textSecondary: palette.textOnDarkSecondary,
+  textMuted: palette.textOnDarkMuted,
   accent: palette.accent,
-  accentMuted: palette.accentMuted,
+  accentMuted: palette.textOnDarkMuted,
+  highlight: palette.highlight,
+  primaryDark: palette.primaryDark,
+  secondaryDark: palette.secondaryDark,
   success: palette.success,
   danger: palette.danger,
   warning: palette.warning,
