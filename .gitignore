@@ -6,8 +6,10 @@ node_modules/
 # Expo
 .expo/
 dist/
+dist-*/
 web-build/
 expo-env.d.ts
+app-example/
 
 # Native
 .kotlin/
@@ -46,6 +48,13 @@ yarn-error.*
 # editor / tooling
 .cursor/
 .idea/
+.history/
+.vscode/
+
+# tooling caches
+.cache/
+.turbo/
+.eslintcache
 
 # test / logs
 coverage/
