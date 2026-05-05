@@ -1,5 +1,5 @@
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { AssignmentCard, PlaceholderCard, ScreenContainer } from "@/components";
+import { AssignmentCard, PlaceholderCard, ScreenContainer, WeekScheduleCard } from "@/components";
 import { MOCK_HOME_ASSIGNMENTS } from "@/constants/homeMock";
 import { useTheme } from "@/hooks";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -18,6 +18,8 @@ export default function HomeScreen() {
           Your weekly schedule, courses, tasks and notes — in one place.
         </Text>
       </View>
+
+      <WeekScheduleCard />
 
       <View
         style={[

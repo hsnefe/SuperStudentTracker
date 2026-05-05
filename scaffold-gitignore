@@ -3,16 +3,11 @@
 # dependencies
 node_modules/
 
-# Local Figma export scratch
-.fig-temp/
-
 # Expo
 .expo/
 dist/
-dist-*/
 web-build/
 expo-env.d.ts
-app-example/
 
 # Native
 .kotlin/
@@ -36,32 +31,13 @@ yarn-error.*
 *.pem
 
 # local env files
-.env
-.env.*
-!.env.example
 .env*.local
 
 # typescript
 *.tsbuildinfo
 
+app-example
+
 # generated native folders
 /ios
 /android
-
-# editor / tooling
-.cursor/
-.idea/
-.history/
-.vscode/
-
-# Git tooling backups (keep local only)
-.git.recovery-backup-*/
-
-# tooling caches
-.cache/
-.turbo/
-.eslintcache
-
-# test / logs
-coverage/
-*.log
