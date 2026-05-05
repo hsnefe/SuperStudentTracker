@@ -1,10 +1,14 @@
 import { Stack, useLocalSearchParams } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { CourseGradeBreakdownCard } from "@/components/CourseGradeBreakdownCard";
+import { ScreenContainer } from "@/components/ScreenContainer";
+import { getMockGradeRowsForCourse } from "@/constants/courseDetailMock";
+import { useMemo } from "react";
 import { useTheme } from "@/hooks";
 
 export default function CourseDetailScreen() {
   const params = useLocalSearchParams<{ id: string | string[]; title?: string | string[] }>();
-  const { colors, typography, spacing } = useTheme();
+  const { spacing } = useTheme();
 
   const idRaw = params.id;
   const titleRaw = params.title;
@@ -15,29 +19,24 @@ export default function CourseDetailScreen() {
 
   const headerTitle = title.length > 42 ? `${title.slice(0, 42)}…` : title;
 
+  const gradeRows = useMemo(() => getMockGradeRowsForCourse(id), [id]);
+
   return (
     <>
       <Stack.Screen options={{ title: headerTitle }} />
-      <View style={[styles.root, { backgroundColor: colors.background, padding: spacing.lg }]}>
-        <Text style={[typography.caption, { color: colors.textMuted }]}>Course</Text>
-        <Text style={[typography.body, { color: colors.textPrimary, marginTop: spacing.xs }]}>
-          {title}
-        </Text>
-        <Text
-          style={[typography.caption, { color: colors.textMuted, marginTop: spacing.lg }]}
-        >
-          ID
-        </Text>
-        <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}>
-          {id}
-        </Text>
-      </View>
+      <ScreenContainer>
+        <View style={{ gap: spacing.xs }}>
+          <View style={{ gap: spacing.xs }}>
+            <View style={[styles.courseTitleBlock, { gap: spacing.xs }]}>
+              <CourseGradeBreakdownCard key={id} courseId={id} initialRows={gradeRows} />
+            </View>
+          </View>
+        </View>
+      </ScreenContainer>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
+  courseTitleBlock: {},
 });
