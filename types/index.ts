@@ -35,6 +35,7 @@ export type Task = {
 
 export type Assignment = {
   id: string;
+  courseId: string;
   title: string;
   description: string;
   tasks: Task[];
@@ -46,6 +47,14 @@ export type GradeComponent = {
   name: string;
   weight: number;
   score?: number;
+};
+
+/** Editable grading breakdown row shown on the course detail screen (weights + score labels like TBA). */
+export type CourseGradeBreakdownRow = {
+  id: string;
+  label: string;
+  weightPercent: number;
+  scoreText: string;
 };
 
 export type Note = {

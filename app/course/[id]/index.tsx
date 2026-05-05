@@ -1,5 +1,6 @@
 import { Stack, useLocalSearchParams } from "expo-router";
 import { StyleSheet, View } from "react-native";
+import { CourseAssignmentsSection } from "@/components/CourseAssignmentsSection";
 import { CourseGradeBreakdownCard } from "@/components/CourseGradeBreakdownCard";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { getMockGradeRowsForCourse } from "@/constants/courseDetailMock";
@@ -25,12 +26,11 @@ export default function CourseDetailScreen() {
     <>
       <Stack.Screen options={{ title: headerTitle }} />
       <ScreenContainer>
-        <View style={{ gap: spacing.xs }}>
-          <View style={{ gap: spacing.xs }}>
-            <View style={[styles.courseTitleBlock, { gap: spacing.xs }]}>
-              <CourseGradeBreakdownCard key={id} courseId={id} initialRows={gradeRows} />
-            </View>
+        <View style={{ gap: spacing.md }}>
+          <View style={[styles.courseTitleBlock, { gap: spacing.xs }]}>
+            <CourseGradeBreakdownCard key={id} courseId={id} initialRows={gradeRows} />
           </View>
+          <CourseAssignmentsSection courseId={id} courseTitle={title} />
         </View>
       </ScreenContainer>
     </>

@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "@/hooks";
 import type { Assignment } from "@/types";
 
@@ -15,6 +15,7 @@ const DESC_TEXT = "#0f1115";
 type Props = {
   assignment: Assignment;
   width: number;
+  onPress?: () => void;
 };
 
 function assignmentProgress(assignment: Assignment): number {
@@ -23,12 +24,12 @@ function assignmentProgress(assignment: Assignment): number {
   return tasks.filter((t) => t.done).length / tasks.length;
 }
 
-export function AssignmentCard({ assignment, width }: Props) {
+export function AssignmentCard({ assignment, width, onPress }: Props) {
   const { colors, radius, spacing, typography } = useTheme();
   const progress = assignmentProgress(assignment);
   const progressPct = Math.round(progress * 100);
 
-  return (
+  const card = (
     <View style={[styles.outer, { width, backgroundColor: CARD_FACE, borderRadius: 28 }]}>
       <Text style={[styles.title, { color: TITLE_COLOR }]} numberOfLines={1}>
         {assignment.title}
@@ -78,6 +79,16 @@ export function AssignmentCard({ assignment, width }: Props) {
       </View>
     </View>
   );
+
+  if (onPress) {
+    return (
+      <Pressable onPress={onPress} accessibilityRole="button" style={{ width }}>
+        {card}
+      </Pressable>
+    );
+  }
+
+  return card;
 }
 
 const styles = StyleSheet.create({

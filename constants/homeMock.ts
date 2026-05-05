@@ -4,6 +4,7 @@ import type { Assignment } from "@/types";
 export const MOCK_HOME_ASSIGNMENTS: Assignment[] = [
   {
     id: "a1",
+    courseId: "mock-cv",
     title: "Assignment 1",
     description: "Task Description dbasbdhsabdhabjasdnjas",
     tasks: [
@@ -14,6 +15,7 @@ export const MOCK_HOME_ASSIGNMENTS: Assignment[] = [
   },
   {
     id: "a2",
+    courseId: "mock-prompt",
     title: "Assignment 2",
     description: "Task Description dbasbdhsabdhabjasdnjas",
     tasks: [
@@ -24,6 +26,7 @@ export const MOCK_HOME_ASSIGNMENTS: Assignment[] = [
   },
   {
     id: "a3",
+    courseId: "mock-cloud",
     title: "Assignment 3",
     description: "Task Description dbasbdhsabdhabjasdnjas",
     tasks: [
