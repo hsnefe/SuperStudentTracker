@@ -14,7 +14,7 @@ import type { CourseGradeBreakdownRow } from "@/types";
 
 const WEIGHT_EPS = 0.01;
 
-/** UUID v4-shaped id for SQLite + compatible inserts into uuid columns on Supabase. */
+/** UUID v4-shaped id for stable local and cloud row identities. */
 function newRowId(): string {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;

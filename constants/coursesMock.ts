@@ -1,4 +1,4 @@
-/** Fallback grid items when Supabase is unavailable or queries fail. */
+/** Fallback grid items when Firebase is unavailable or queries fail. */
 export type CourseGridItem = {
   id: string;
   title: string;

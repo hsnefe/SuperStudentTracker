@@ -1,6 +1,6 @@
 export * from "./providers";
 export * from "./theme";
 export * from "./queryClient";
-export * from "./supabase";
+export * from "./firebase";
 export * from "./sqliteCache";
 export * from "./notifications";

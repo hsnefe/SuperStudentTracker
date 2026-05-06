@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-n
 import { AssignmentCard, PlaceholderCard, ScreenContainer, WeekScheduleCard } from "@/components";
 import { MOCK_HOME_ASSIGNMENTS } from "@/constants/homeMock";
 import { useTheme } from "@/hooks";
-import { isSupabaseConfigured } from "@/lib/supabase";
+import { isFirebaseConfigured } from "@/lib/firebase";
 
 export default function HomeScreen() {
   const { colors, typography, spacing, radius } = useTheme();
@@ -82,10 +82,10 @@ export default function HomeScreen() {
         <Text
           style={[
             typography.caption,
-            { color: isSupabaseConfigured ? colors.success : colors.warning },
+            { color: isFirebaseConfigured ? colors.success : colors.warning },
           ]}
         >
-          {isSupabaseConfigured ? "Supabase configured" : "Set EXPO_PUBLIC_SUPABASE_* in .env"}
+          {isFirebaseConfigured ? "Firebase configured" : "Set EXPO_PUBLIC_FIREBASE_* in .env"}
         </Text>
       </View>
     </ScreenContainer>

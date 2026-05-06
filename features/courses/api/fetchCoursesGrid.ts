@@ -1,5 +1,6 @@
 import type { CourseGridItem } from "@/constants/coursesMock";
-import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import { collection, getDocs } from "firebase/firestore";
+import { getFirebaseFirestore, isFirebaseConfigured } from "@/lib/firebase";
 
 type CourseRow = {
   id: string | number;
@@ -19,30 +20,21 @@ type AssignmentRow = {
  * Adjust column names here when your schema is finalized.
  */
 export async function fetchCoursesGrid(): Promise<CourseGridItem[]> {
-  if (!isSupabaseConfigured) {
-    throw new Error("Supabase is not configured");
+  if (!isFirebaseConfigured) {
+    throw new Error("Firebase is not configured");
   }
 
-  const supabase = getSupabase();
+  const db = getFirebaseFirestore();
+  const [coursesSnap, assignmentsSnap] = await Promise.all([
+    getDocs(collection(db, "courses")),
+    getDocs(collection(db, "assignments")),
+  ]);
 
-  const { data: coursesRaw, error: coursesError } = await supabase
-    .from("courses")
-    .select("id, title, name, image_url, cover_url");
-
-  if (coursesError) {
-    throw coursesError;
-  }
-
-  const { data: assignmentsRaw, error: assignmentsError } = await supabase
-    .from("assignments")
-    .select("course_id");
-
-  if (assignmentsError) {
-    throw assignmentsError;
-  }
-
-  const courses = (coursesRaw ?? []) as CourseRow[];
-  const assignments = (assignmentsRaw ?? []) as AssignmentRow[];
+  const courses = coursesSnap.docs.map((docSnap) => {
+    const data = docSnap.data() as Omit<CourseRow, "id">;
+    return { id: docSnap.id, ...data } as CourseRow;
+  });
+  const assignments = assignmentsSnap.docs.map((docSnap) => docSnap.data() as AssignmentRow);
 
   const counts = new Map<string, number>();
   for (const row of assignments) {

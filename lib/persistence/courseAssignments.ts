@@ -1,19 +1,12 @@
 /**
- * Per-course assignment lists: Supabase when configured, else SQLite (native), else in-memory (web).
- *
- * ```sql
- * create table if not exists public.course_assignments_bundle (
- *   course_id text primary key,
- *   assignments_json jsonb not null,
- *   updated_at timestamptz not null default now()
- * );
- * ```
+ * Per-course assignment lists: Firestore when configured, else SQLite (native), else in-memory (web).
  */
 import { Platform } from "react-native";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import type { Assignment } from "@/types";
 import { MOCK_HOME_ASSIGNMENTS } from "@/constants/homeMock";
 import { readCache, writeCache } from "@/lib/sqliteCache";
-import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import { getFirebaseFirestore, isFirebaseConfigured } from "@/lib/firebase";
 
 const CACHE_PREFIX = "course_assignments:";
 
@@ -28,17 +21,11 @@ export function mockAssignmentsForCourse(courseId: string): Assignment[] {
 }
 
 export async function loadAssignments(courseId: string): Promise<Assignment[]> {
-  if (isSupabaseConfigured) {
+  if (isFirebaseConfigured) {
     try {
-      const sb = getSupabase();
-      const { data, error } = await sb
-        .from("course_assignments_bundle")
-        .select("assignments_json")
-        .eq("course_id", courseId)
-        .maybeSingle();
-
-      if (error) throw error;
-      const raw = data?.assignments_json;
+      const db = getFirebaseFirestore();
+      const snap = await getDoc(doc(db, "courseAssignments", courseId));
+      const raw = snap.data()?.assignments;
       if (raw != null) {
         const parsed = typeof raw === "string" ? (JSON.parse(raw) as Assignment[]) : (raw as Assignment[]);
         if (Array.isArray(parsed)) return parsed;
@@ -60,18 +47,13 @@ export async function loadAssignments(courseId: string): Promise<Assignment[]> {
 }
 
 export async function saveAssignments(courseId: string, assignments: Assignment[]): Promise<void> {
-  if (isSupabaseConfigured) {
+  if (isFirebaseConfigured) {
     try {
-      const sb = getSupabase();
-      const { error } = await sb.from("course_assignments_bundle").upsert(
-        {
-          course_id: courseId,
-          assignments_json: assignments,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "course_id" },
-      );
-      if (error) throw error;
+      const db = getFirebaseFirestore();
+      await setDoc(doc(db, "courseAssignments", courseId), {
+        assignments,
+        updatedAt: new Date().toISOString(),
+      });
       return;
     } catch {
       /* fall through */
