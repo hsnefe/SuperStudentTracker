@@ -106,7 +106,7 @@ function ScheduleTaskBlock({
   layoutHeightPx: number;
 }) {
   const { colors, typography, spacing, radius } = useTheme();
-  const { start, span } = gridMinutesRange();
+  const { start } = gridMinutesRange();
   const topMin = Math.max(0, block.startMinute - start);
   const botMin = Math.min(minuteSpan, block.endMinute - start);
   const durMin = Math.max(15, botMin - topMin);
