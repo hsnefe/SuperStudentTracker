@@ -12,6 +12,10 @@ import { CourseGridCard, getCourseCardTotalHeight } from "@/components/CourseGri
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { SimpleToast } from "@/components/SimpleToast";
 import { MOCK_COURSES_FALLBACK } from "@/constants/coursesMock";
+import {
+  COURSE_GRID_HOVER_SCALE,
+  COURSE_GRID_SCALE_PADDING_RATIO,
+} from "@/constants/glassInteractionVisual";
 import { useTheme } from "@/hooks";
 import { useCoursesGridData } from "../hooks/useCoursesGridData";
 
@@ -29,13 +33,17 @@ export function CoursesScreen() {
   const horizontalPadding = spacing.lg * 2;
   const gap = spacing.md;
   const innerWidth = Math.max(0, width - horizontalPadding);
-  const cardWidth = Math.floor((innerWidth - gap * (NUM_COLUMNS - 1)) / NUM_COLUMNS);
+  const columnWidth = Math.floor((innerWidth - gap * (NUM_COLUMNS - 1)) / NUM_COLUMNS);
+  const cardScalePadding = Math.ceil(columnWidth * COURSE_GRID_SCALE_PADDING_RATIO);
+  const cardWidth = columnWidth - cardScalePadding * 2;
 
   const rowMetrics = useMemo(() => {
     const cardHeight = getCourseCardTotalHeight(cardWidth, spacing.sm);
-    const gridMaxHeight = cardHeight * 2 + gap * 2 + cardHeight * 0.3;
-    return { gridMaxHeight };
-  }, [cardWidth, gap, spacing.sm]);
+    const hoverOverflow = Math.ceil(cardHeight * (COURSE_GRID_HOVER_SCALE - 1));
+    const gridMaxHeight =
+      cardHeight * 2 + gap * 2 + cardHeight * 0.3 + hoverOverflow + cardScalePadding * 2;
+    return { gridMaxHeight, cardScalePadding, columnWidth };
+  }, [cardWidth, gap, spacing.sm, cardScalePadding]);
 
   const displayCourses = useMemo(() => {
     if (query.isPending) return [];
@@ -80,16 +88,26 @@ export function CoursesScreen() {
               nestedScrollEnabled
               showsVerticalScrollIndicator
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingBottom: spacing.md }}
+              contentContainerStyle={{
+                paddingTop: rowMetrics.cardScalePadding,
+                paddingBottom: spacing.md + rowMetrics.cardScalePadding,
+              }}
             >
               <View style={[styles.wrapRow, { gap }]}>
                 {displayCourses.map((course) => (
-                  <CourseGridCard
+                  <View
                     key={course.id}
-                    course={course}
-                    width={cardWidth}
-                    onPress={() => handleCardPress(course.id, course.title)}
-                  />
+                    style={{
+                      width: rowMetrics.columnWidth,
+                      padding: rowMetrics.cardScalePadding,
+                    }}
+                  >
+                    <CourseGridCard
+                      course={course}
+                      width={cardWidth}
+                      onPress={() => handleCardPress(course.id, course.title)}
+                    />
+                  </View>
                 ))}
               </View>
             </ScrollView>
@@ -117,7 +135,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   gridClip: {
-    overflow: "hidden",
+    overflow: "visible",
     marginTop: 4,
   },
   wrapRow: {

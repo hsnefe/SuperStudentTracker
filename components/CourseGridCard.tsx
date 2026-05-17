@@ -1,6 +1,12 @@
 import { useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
+import { GlassInteractionSurface } from "@/components/course/GlassInteractionSurface";
 import type { CourseGridItem } from "@/constants/coursesMock";
+import {
+  COURSE_GRID_HOVER_SCALE,
+  COURSE_GRID_PRESS_SCALE,
+  GLASS_BORDER_GLOW_WIDTH,
+} from "@/constants/glassInteractionVisual";
 import { useTheme } from "@/hooks";
 
 const PLACEHOLDER = require("@/assets/images/partial-react-logo.png");
@@ -23,10 +29,15 @@ export function getCourseCardFooterOuterHeight(spacingSm: number): number {
   );
 }
 
-export function getCourseCardTotalHeight(cardWidth: number, spacingSm: number): number {
+export function getCourseCardInnerHeight(cardWidth: number, spacingSm: number): number {
   const imageHeight = Math.round(cardWidth * COURSE_CARD_IMAGE_RATIO);
   const border = StyleSheet.hairlineWidth * 2;
   return imageHeight + getCourseCardFooterOuterHeight(spacingSm) + border;
+}
+
+/** Total card footprint including glass border ring padding. */
+export function getCourseCardTotalHeight(cardWidth: number, spacingSm: number): number {
+  return getCourseCardInnerHeight(cardWidth, spacingSm) + GLASS_BORDER_GLOW_WIDTH * 2;
 }
 
 type Props = {
@@ -42,53 +53,40 @@ export function CourseGridCard({ course, width, onPress }: Props) {
 
   const imageHeight = Math.round(width * COURSE_CARD_IMAGE_RATIO);
   const footerOuterHeight = getCourseCardFooterOuterHeight(spacing.sm);
-  const cardOuterHeight = imageHeight + footerOuterHeight + StyleSheet.hairlineWidth * 2;
+  const cardInnerHeight = getCourseCardInnerHeight(width, spacing.sm);
   const footerPadding = spacing.sm;
   const showRemote = Boolean(course.imageUrl) && !imgFailed;
 
+  const cardBackground = (
+    <View style={[styles.cardBackground, { height: cardInnerHeight }]}>
+      <Image
+        source={showRemote ? { uri: course.imageUrl! } : PLACEHOLDER}
+        style={[styles.thumb, { height: imageHeight }]}
+        resizeMode="cover"
+        onError={() => setImgFailed(true)}
+      />
+      <View style={[styles.surfaceFill, { backgroundColor: colors.surface }]} />
+    </View>
+  );
+
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`Course ${course.title}`}
+    <GlassInteractionSurface
+      interactive
+      enableScale
+      scaleMode="hoverGrowPressShrink"
+      hoverScale={COURSE_GRID_HOVER_SCALE}
+      pressScale={COURSE_GRID_PRESS_SCALE}
+      enableRotatingBorder
+      enableShine
+      enableBlur={false}
+      borderRadius={radius.lg}
+      style={{ width, height: cardInnerHeight }}
+      background={cardBackground}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.pressable,
-        {
-          width,
-          height: cardOuterHeight,
-          opacity: pressed ? 0.92 : 1,
-          transform: pressed ? [{ scale: 0.985 }] : [{ scale: 1 }],
-        },
-      ]}
+      accessibilityLabel={`Course ${course.title}`}
     >
-      <View
-        style={[
-          styles.card,
-          {
-            height: cardOuterHeight,
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-            borderRadius: radius.lg,
-          },
-        ]}
-      >
-        <View
-          style={[
-            styles.thumbWrap,
-            {
-              height: imageHeight,
-              borderTopLeftRadius: radius.lg,
-              borderTopRightRadius: radius.lg,
-            },
-          ]}
-        >
-          <Image
-            source={showRemote ? { uri: course.imageUrl! } : PLACEHOLDER}
-            style={[styles.thumb, { height: imageHeight }]}
-            resizeMode="cover"
-            onError={() => setImgFailed(true)}
-          />
-        </View>
+      <View style={[styles.cardBody, { height: cardInnerHeight }]}>
+        <View style={{ height: imageHeight }} />
 
         <View
           style={[
@@ -146,27 +144,26 @@ export function CourseGridCard({ course, width, onPress }: Props) {
           </View>
         </View>
       </View>
-    </Pressable>
+    </GlassInteractionSurface>
   );
 }
 
 const paletteWhite = "#ffffff";
 
 const styles = StyleSheet.create({
-  pressable: {},
-  card: {
-    overflow: "hidden",
-    borderWidth: StyleSheet.hairlineWidth,
+  cardBackground: {
+    width: "100%",
+  },
+  cardBody: {
     flexDirection: "column",
   },
-  thumbWrap: {
-    overflow: "hidden",
+  surfaceFill: {
+    flex: 1,
     width: "100%",
-    flexShrink: 0,
-    backgroundColor: "rgba(255,255,255,0.06)",
   },
   thumb: {
     width: "100%",
+    backgroundColor: "rgba(255,255,255,0.06)",
   },
   footer: {
     flexShrink: 0,
