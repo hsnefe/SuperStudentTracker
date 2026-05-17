@@ -1,4 +1,5 @@
-import { useState } from "react";
+import type { Href } from "expo-router";
+import { useRef, useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { GlassInteractionSurface } from "@/components/course/GlassInteractionSurface";
 import type { CourseGridItem } from "@/constants/coursesMock";
@@ -7,7 +8,7 @@ import {
   COURSE_GRID_PRESS_SCALE,
   GLASS_BORDER_GLOW_WIDTH,
 } from "@/constants/glassInteractionVisual";
-import { useTheme } from "@/hooks";
+import { useExpandNavigation, useTheme } from "@/hooks";
 
 const PLACEHOLDER = require("@/assets/images/partial-react-logo.png");
 
@@ -43,12 +44,14 @@ export function getCourseCardTotalHeight(cardWidth: number, spacingSm: number): 
 type Props = {
   course: CourseGridItem;
   width: number;
-  onPress: () => void;
+  href: Href;
 };
 
 /** Card inspired by learning-platform tiles; no promotional badges. */
-export function CourseGridCard({ course, width, onPress }: Props) {
+export function CourseGridCard({ course, width, href }: Props) {
   const { colors, radius, spacing, typography } = useTheme();
+  const { pushExpand } = useExpandNavigation();
+  const rootRef = useRef<View>(null);
   const [imgFailed, setImgFailed] = useState(false);
 
   const imageHeight = Math.round(width * COURSE_CARD_IMAGE_RATIO);
@@ -70,21 +73,22 @@ export function CourseGridCard({ course, width, onPress }: Props) {
   );
 
   return (
-    <GlassInteractionSurface
-      interactive
-      enableScale
-      scaleMode="hoverGrowPressShrink"
-      hoverScale={COURSE_GRID_HOVER_SCALE}
-      pressScale={COURSE_GRID_PRESS_SCALE}
-      enableRotatingBorder
-      enableShine
-      enableBlur={false}
-      borderRadius={radius.lg}
-      style={{ width, height: cardInnerHeight }}
-      background={cardBackground}
-      onPress={onPress}
-      accessibilityLabel={`Course ${course.title}`}
-    >
+    <View ref={rootRef} collapsable={false} style={{ width, height: cardInnerHeight }}>
+      <GlassInteractionSurface
+        interactive
+        enableScale
+        scaleMode="hoverGrowPressShrink"
+        hoverScale={COURSE_GRID_HOVER_SCALE}
+        pressScale={COURSE_GRID_PRESS_SCALE}
+        enableRotatingBorder
+        enableShine
+        enableBlur={false}
+        borderRadius={radius.lg}
+        style={{ width, height: cardInnerHeight }}
+        background={cardBackground}
+        onPress={() => pushExpand(href, rootRef)}
+        accessibilityLabel={`Course ${course.title}`}
+      >
       <View style={[styles.cardBody, { height: cardInnerHeight }]}>
         <View style={{ height: imageHeight }} />
 
@@ -144,7 +148,8 @@ export function CourseGridCard({ course, width, onPress }: Props) {
           </View>
         </View>
       </View>
-    </GlassInteractionSurface>
+      </GlassInteractionSurface>
+    </View>
   );
 }
 

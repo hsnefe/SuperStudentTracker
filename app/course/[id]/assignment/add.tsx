@@ -11,6 +11,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { loadAssignments, saveAssignments } from "@/lib/persistence/courseAssignments";
 import { useTheme } from "@/hooks";
 
@@ -57,28 +58,26 @@ export default function AddCourseAssignmentScreen() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: "New assignment",
-          presentation: "modal",
-          headerRight: () => (
-            <Pressable
-              onPress={() => router.dismiss()}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel="Close"
-              style={{ paddingHorizontal: spacing.sm }}
-            >
-              <MaterialIcons name="close" size={24} color={colors.textPrimary} />
-            </Pressable>
-          ),
-        }}
-      />
-      <KeyboardAvoidingView
+      <Stack.Screen options={{ headerShown: false, presentation: "modal" }} />
+      <SafeAreaView
         style={[styles.root, { backgroundColor: colors.background }]}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        edges={["top", "bottom"]}
       >
+        <Pressable
+          onPress={() => router.dismiss()}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          style={styles.closeBtn}
+        >
+          <MaterialIcons name="close" size={24} color={colors.textPrimary} />
+        </Pressable>
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[typography.title, { color: colors.textPrimary }]}>New assignment</Text>
           <Text style={[typography.body, { color: colors.textSecondary }]}>
             Title-only assignment; you can add description and tasks later.
           </Text>
@@ -114,7 +113,8 @@ export default function AddCourseAssignmentScreen() {
             )}
           </Pressable>
         </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </>
   );
 }
@@ -122,7 +122,18 @@ export default function AddCourseAssignmentScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    padding: 16,
+  },
+  flex: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  closeBtn: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 4,
   },
   card: {
     borderRadius: 16,

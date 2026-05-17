@@ -7,7 +7,8 @@ export default function CourseStackLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: true,
+        headerShown: false,
+        animation: "none",
         headerStyle: { backgroundColor: colors.surface },
         headerTintColor: colors.textPrimary,
         headerTitleStyle: { fontWeight: "600", color: colors.textPrimary },

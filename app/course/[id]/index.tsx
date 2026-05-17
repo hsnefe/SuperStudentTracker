@@ -1,5 +1,5 @@
 import { useFocusEffect } from "@react-navigation/native";
-import { Stack, useRouter } from "expo-router";
+import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
@@ -15,7 +15,6 @@ import { loadAssignments } from "@/lib/persistence/courseAssignments";
 import type { Assignment } from "@/types";
 
 export default function CourseDetailScreen() {
-  const router = useRouter();
   const { id, title, activeSection, onSelectSection } = useCourseDetailTabs();
   const { colors, spacing } = useTheme();
   const insets = useSafeAreaInsets();
@@ -53,19 +52,6 @@ export default function CourseDetailScreen() {
 
   const assignmentCount = assignments.length;
 
-  const openAddAssignment = useCallback(() => {
-    router.push(`/course/${encodeURIComponent(id)}/assignment/add`);
-  }, [id, router]);
-
-  const openAssignment = useCallback(
-    (a: Assignment) => {
-      router.push(
-        `/course/${encodeURIComponent(id)}/assignment/${encodeURIComponent(a.id)}?courseTitle=${encodeURIComponent(title)}`,
-      );
-    },
-    [id, router, title],
-  );
-
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -95,10 +81,10 @@ export default function CourseDetailScreen() {
           />
 
           <CourseAssignmentsBlurSection
+            courseId={id}
+            courseTitle={title}
             assignments={assignments}
             loading={assignmentsLoading}
-            onOpenAssignment={openAssignment}
-            onAddAssignment={openAddAssignment}
             style={{
               flex: 1,
               minHeight: courseAssignmentsMinHeightPx(windowHeight),

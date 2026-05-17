@@ -1,4 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useRef } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -15,29 +16,31 @@ import {
   COURSE_BLUR_BRIDGE_HALF_PX,
   courseBlurMaxIntensity,
 } from "@/constants/courseDetailVisual";
-import { useTheme } from "@/hooks";
+import { useExpandNavigation, useTheme } from "@/hooks";
 import type { Assignment } from "@/types";
 
 const CARD_W = 168;
 const CARD_H = 132;
 
 type Props = {
+  courseId: string;
+  courseTitle: string;
   assignments: Assignment[];
   loading: boolean;
-  onOpenAssignment: (a: Assignment) => void;
-  onAddAssignment: () => void;
   /** Grows to fill scroll area below hero (e.g. `{ flex: 1 }`). */
   style?: StyleProp<ViewStyle>;
 };
 
 export function CourseAssignmentsBlurSection({
+  courseId,
+  courseTitle,
   assignments,
   loading,
-  onOpenAssignment,
-  onAddAssignment,
   style,
 }: Props) {
   const { typography, spacing } = useTheme();
+  const { pushExpand } = useExpandNavigation();
+  const addButtonRef = useRef<View>(null);
   const maxIntensity = courseBlurMaxIntensity();
 
   return (
@@ -79,7 +82,16 @@ export function CourseAssignmentsBlurSection({
             ASSIGNMENTS
           </Text>
           <Pressable
-            onPress={onAddAssignment}
+            ref={addButtonRef}
+            onPress={() =>
+              pushExpand(
+                {
+                  pathname: "/course/[id]/assignment/add",
+                  params: { id: courseId },
+                },
+                addButtonRef,
+              )
+            }
             accessibilityRole="button"
             accessibilityLabel="Add assignment"
             hitSlop={12}
@@ -115,7 +127,14 @@ export function CourseAssignmentsBlurSection({
                 assignment={a}
                 width={CARD_W}
                 height={CARD_H}
-                onPress={() => onOpenAssignment(a)}
+                href={{
+                  pathname: "/course/[id]/assignment/[assignmentId]",
+                  params: {
+                    id: courseId,
+                    assignmentId: a.id,
+                    courseTitle,
+                  },
+                }}
               />
             ))}
           </ScrollView>

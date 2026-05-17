@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -22,7 +21,6 @@ import { useCoursesGridData } from "../hooks/useCoursesGridData";
 const NUM_COLUMNS = 4;
 
 export function CoursesScreen() {
-  const router = useRouter();
   const { width } = useWindowDimensions();
   const { colors, spacing, typography } = useTheme();
   const query = useCoursesGridData();
@@ -60,11 +58,6 @@ export function CoursesScreen() {
       toastShownRef.current = false;
     }
   }, [query.isError, query.isSuccess]);
-
-  const handleCardPress = (id: string, title: string) => {
-    const q = encodeURIComponent(title);
-    router.push(`/course/${encodeURIComponent(id)}?title=${q}`);
-  };
 
   const showEmptySuccess =
     query.isSuccess && !query.isError && (query.data?.length ?? 0) === 0;
@@ -105,7 +98,13 @@ export function CoursesScreen() {
                     <CourseGridCard
                       course={course}
                       width={cardWidth}
-                      onPress={() => handleCardPress(course.id, course.title)}
+                      href={{
+                        pathname: "/course/[id]",
+                        params: {
+                          id: course.id,
+                          title: course.title,
+                        },
+                      }}
                     />
                   </View>
                 ))}

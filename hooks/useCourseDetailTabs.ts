@@ -1,9 +1,11 @@
-import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
-import { useCallback, useMemo } from "react";
+import type { Href } from "expo-router";
+import { useLocalSearchParams, usePathname } from "expo-router";
+import { useCallback, useMemo, type RefObject } from "react";
+import { View } from "react-native";
 import type { CourseDetailSection } from "@/components/course/CourseDetailAppBar";
+import { useExpandNavigation } from "./useExpandNavigation";
 
 export function useCourseDetailTabs() {
-  const router = useRouter();
   const pathname = usePathname();
   const params = useLocalSearchParams<{ id: string | string[]; title?: string | string[] }>();
 
@@ -13,9 +15,6 @@ export function useCourseDetailTabs() {
   const titleParam = Array.isArray(titleRaw) ? titleRaw[0] : titleRaw;
   const title =
     typeof titleParam === "string" && titleParam.length > 0 ? titleParam : "Course";
-
-  const query = title.length > 0 ? `?title=${encodeURIComponent(title)}` : "";
-  const base = `/course/${encodeURIComponent(id)}`;
 
   const activeSection = useMemo((): CourseDetailSection => {
     const parts = pathname.split("/").filter(Boolean);
@@ -27,14 +26,27 @@ export function useCourseDetailTabs() {
     return "home";
   }, [pathname]);
 
-  const onSelectSection = useCallback(
-    (section: CourseDetailSection) => {
-      if (section === "home") router.replace(`${base}${query}`);
-      else if (section === "materials") router.replace(`${base}/materials${query}`);
-      else router.replace(`${base}/grades${query}`);
+  const { replaceExpand } = useExpandNavigation();
+
+  const sectionHref = useCallback(
+    (section: CourseDetailSection): Href => {
+      if (section === "home") {
+        return { pathname: "/course/[id]", params: { id, title } };
+      }
+      if (section === "materials") {
+        return { pathname: "/course/[id]/materials", params: { id, title } };
+      }
+      return { pathname: "/course/[id]/grades", params: { id, title } };
     },
-    [base, query, router],
+    [id, title],
   );
 
-  return { id, title, activeSection, onSelectSection };
+  const onSelectSection = useCallback(
+    (section: CourseDetailSection, sourceRef?: RefObject<View | null>) => {
+      replaceExpand(sectionHref(section), sourceRef ?? { current: null });
+    },
+    [replaceExpand, sectionHref],
+  );
+
+  return { id, title, activeSection, onSelectSection, sectionHref };
 }

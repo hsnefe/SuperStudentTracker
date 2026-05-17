@@ -1,6 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Alert, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   Easing,
@@ -22,7 +22,10 @@ export type { CourseDetailSection };
 
 type Props = {
   activeSection: CourseDetailSection;
-  onSelectSection: (section: CourseDetailSection) => void;
+  onSelectSection: (
+    section: CourseDetailSection,
+    sourceRef?: { current: View | null },
+  ) => void;
 };
 
 const PILL_BG = "rgba(15, 15, 18, 0.55)";
@@ -46,6 +49,7 @@ function movePillIndicator(section: CourseDetailSection, animate: boolean) {
 export function CourseDetailAppBar({ activeSection, onSelectSection }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const tabRefs = useRef<Partial<Record<CourseDetailSection, View | null>>>({});
 
   useEffect(() => {
     if (!pillHasLaidOut) return;
@@ -66,7 +70,7 @@ export function CourseDetailAppBar({ activeSection, onSelectSection }: Props) {
         movePillIndicator(key, pillHasLaidOut);
         markPillLaidOut();
       }
-      onSelectSection(key);
+      onSelectSection(key, { current: tabRefs.current[key] ?? null });
     },
     [activeSection, onSelectSection],
   );
@@ -108,6 +112,9 @@ export function CourseDetailAppBar({ activeSection, onSelectSection }: Props) {
             return (
               <Pressable
                 key={key}
+                ref={(node) => {
+                  tabRefs.current[key] = node;
+                }}
                 onPress={() => onTabPress(key)}
                 onLayout={(e) => {
                   const { x, width } = e.nativeEvent.layout;

@@ -1,6 +1,9 @@
+import type { Href } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { GlassInteractionSurface } from "@/components/course/GlassInteractionSurface";
+import { useExpandNavigation } from "@/hooks";
 import type { Assignment } from "@/types";
 
 const ORANGE = "#FF653F";
@@ -10,7 +13,7 @@ type Props = {
   variant: 0 | 1 | 2 | 3;
   indexLabel: string;
   assignment: Assignment;
-  onPress: () => void;
+  href: Href;
   width: number;
   height: number;
 };
@@ -19,10 +22,12 @@ export function AssignmentStripCard({
   variant,
   indexLabel,
   assignment,
-  onPress,
+  href,
   width,
   height,
 }: Props) {
+  const rootRef = useRef<View>(null);
+  const { pushExpand } = useExpandNavigation();
   const inner = (
     <>
       <Text
@@ -67,21 +72,21 @@ export function AssignmentStripCard({
       />
     );
 
-  // <asscard>
   return (
-    <GlassInteractionSurface
-      borderRadius={CARD_RADIUS}
-      interactive
-      enableScale
-      onPress={onPress}
-      style={faceSize}
-      background={background}
-      accessibilityLabel={assignment.title}
-    >
-      <View style={[styles.facePad, faceSize]}>{inner}</View>
-    </GlassInteractionSurface>
+    <View ref={rootRef} collapsable={false} style={faceSize}>
+      <GlassInteractionSurface
+        borderRadius={CARD_RADIUS}
+        interactive
+        enableScale
+        onPress={() => pushExpand(href, rootRef)}
+        style={faceSize}
+        background={background}
+        accessibilityLabel={assignment.title}
+      >
+        <View style={[styles.facePad, faceSize]}>{inner}</View>
+      </GlassInteractionSurface>
+    </View>
   );
-  // </asscard>
 }
 
 const styles = StyleSheet.create({

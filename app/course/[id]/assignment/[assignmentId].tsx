@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams } from "expo-router";
 import { Text, View } from "react-native";
-import { ScreenContainer } from "@/components/ScreenContainer";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks";
 
 export default function AssignmentDetailPlaceholderScreen() {
@@ -25,9 +25,9 @@ export default function AssignmentDetailPlaceholderScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Assignment" }} />
-      <ScreenContainer>
-        <View style={{ gap: spacing.md }}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["top", "bottom"]}>
+        <View style={{ gap: spacing.md, padding: spacing.lg }}>
           <Text style={[typography.title, { color: colors.textPrimary }]}>Assignment detail</Text>
           <Text style={[typography.body, { color: colors.textSecondary }]}>
             Assignment detail — coming soon.
@@ -41,7 +41,7 @@ export default function AssignmentDetailPlaceholderScreen() {
             </Text>
           ) : null}
         </View>
-      </ScreenContainer>
+      </SafeAreaView>
     </>
   );
 }
