@@ -1,9 +1,24 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
+import { useCallback, useEffect } from "react";
 import { Alert, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  markPillLaidOut,
+  pillHasLaidOut,
+  pillIndicatorReady,
+  pillIndicatorW,
+  pillIndicatorX,
+  pillTabLayouts,
+  type CourseDetailSection,
+} from "@/components/course/coursePillIndicator";
 
-export type CourseDetailSection = "home" | "materials" | "grades";
+export type { CourseDetailSection };
 
 type Props = {
   activeSection: CourseDetailSection;
@@ -11,10 +26,56 @@ type Props = {
 };
 
 const PILL_BG = "rgba(15, 15, 18, 0.55)";
+const SECTIONS = ["home", "materials", "grades"] as const;
+const PILL_TIMING = { duration: 280, easing: Easing.out(Easing.cubic) };
+
+function movePillIndicator(section: CourseDetailSection, animate: boolean) {
+  const layout = pillTabLayouts[section];
+  if (!layout) return;
+
+  if (animate) {
+    pillIndicatorX.value = withTiming(layout.x, PILL_TIMING);
+    pillIndicatorW.value = withTiming(layout.width, PILL_TIMING);
+  } else {
+    pillIndicatorX.value = layout.x;
+    pillIndicatorW.value = layout.width;
+  }
+  pillIndicatorReady.value = 1;
+}
 
 export function CourseDetailAppBar({ activeSection, onSelectSection }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    if (!pillHasLaidOut) return;
+    movePillIndicator(activeSection, true);
+  }, [activeSection]);
+
+  const onTabLayout = useCallback((key: CourseDetailSection, x: number, width: number) => {
+    pillTabLayouts[key] = { x, width };
+    if (key === activeSection) {
+      movePillIndicator(key, pillHasLaidOut);
+      markPillLaidOut();
+    }
+  }, [activeSection]);
+
+  const onTabPress = useCallback(
+    (key: CourseDetailSection) => {
+      if (key !== activeSection && pillTabLayouts[key]) {
+        movePillIndicator(key, pillHasLaidOut);
+        markPillLaidOut();
+      }
+      onSelectSection(key);
+    },
+    [activeSection, onSelectSection],
+  );
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    opacity: pillIndicatorReady.value,
+    transform: [{ translateX: pillIndicatorX.value }],
+    width: pillIndicatorW.value,
+  }));
 
   const onPencil = () => {
     Alert.alert("Edit", "Coming soon.");
@@ -37,24 +98,33 @@ export function CourseDetailAppBar({ activeSection, onSelectSection }: Props) {
       </Pressable>
 
       <View style={styles.pillWrap}>
+        {/* <categoryswitch> */}
         <View style={[styles.pill, { backgroundColor: PILL_BG }]}>
-          {(["home", "materials", "grades"] as const).map((key) => {
+          <Animated.View style={[styles.pillIndicator, indicatorStyle]} pointerEvents="none" />
+          {SECTIONS.map((key) => {
             const label =
               key === "home" ? "Home" : key === "materials" ? "Materials" : "Grades";
             const selected = activeSection === key;
             return (
               <Pressable
                 key={key}
-                onPress={() => onSelectSection(key)}
-                style={[styles.pillItem, selected && styles.pillItemSelected]}
+                onPress={() => onTabPress(key)}
+                onLayout={(e) => {
+                  const { x, width } = e.nativeEvent.layout;
+                  onTabLayout(key, x, width);
+                }}
+                style={styles.pillItem}
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
               >
-                <Text style={[styles.pillLabel, selected && styles.pillLabelSelected]}>{label}</Text>
+                <Text style={[styles.pillLabel, selected && styles.pillLabelSelected]}>
+                  {label}
+                </Text>
               </Pressable>
             );
           })}
         </View>
+        {/* </categoryswitch> */}
       </View>
 
       <View style={styles.iconSlot}>
@@ -104,14 +174,21 @@ const styles = StyleSheet.create({
     gap: 4,
     borderWidth: Platform.OS === "web" ? 1 : StyleSheet.hairlineWidth,
     borderColor: "rgba(255,255,255,0.12)",
+    position: "relative",
+  },
+  pillIndicator: {
+    position: "absolute",
+    top: 4,
+    bottom: 4,
+    left: 0,
+    borderRadius: 999,
+    backgroundColor: "#fff",
   },
   pillItem: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
-  },
-  pillItemSelected: {
-    backgroundColor: "#fff",
+    zIndex: 1,
   },
   pillLabel: {
     fontSize: 11,

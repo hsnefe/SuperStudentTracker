@@ -1,6 +1,12 @@
+import { Platform } from "react-native";
+
 /** Total vertical blur transition height split evenly between hero bottom and assignments top. */
-export const COURSE_BLUR_BRIDGE_TOTAL_PX = 88;
+export const COURSE_BLUR_BRIDGE_TOTAL_PX = 144;
 export const COURSE_BLUR_BRIDGE_HALF_PX = COURSE_BLUR_BRIDGE_TOTAL_PX / 2;
+
+export const COURSE_BLUR_MAX_INTENSITY_IOS = 70;
+export const COURSE_BLUR_MAX_INTENSITY_ANDROID = 45;
+export const COURSE_BLUR_SLICE_COUNT_WEB = 8;
 
 /** Minimum height of course hero (`resim1`) as a fraction of window height. */
 export const COURSE_HERO_MIN_HEIGHT_RATIO = 0.62;
@@ -10,6 +16,12 @@ export const COURSE_HERO_MIN_HEIGHT_RATIO = 0.62;
  * (not window height): heroMinPx * this value.
  */
 export const COURSE_ASSIGNMENTS_MIN_HEIGHT_RATIO_OF_HERO = 0.8;
+
+export function courseBlurMaxIntensity(): number {
+  return Platform.OS === "ios"
+    ? COURSE_BLUR_MAX_INTENSITY_IOS
+    : COURSE_BLUR_MAX_INTENSITY_ANDROID;
+}
 
 export function courseHeroMinHeightPx(windowHeight: number): number {
   return Math.round(windowHeight * COURSE_HERO_MIN_HEIGHT_RATIO);

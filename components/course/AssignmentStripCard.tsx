@@ -1,8 +1,10 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { GlassInteractionSurface } from "@/components/course/GlassInteractionSurface";
 import type { Assignment } from "@/types";
 
 const ORANGE = "#FF653F";
+const CARD_RADIUS = 16;
 
 type Props = {
   variant: 0 | 1 | 2 | 3;
@@ -43,44 +45,48 @@ export function AssignmentStripCard({
     </>
   );
 
-  const face =
+  const faceSize = { width, height };
+
+  const background =
     variant === 1 ? (
       <LinearGradient
         colors={["rgba(255,101,63,0.45)", "rgba(230,87,21,0.35)", "rgba(184,50,8,0.3)"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[styles.face, styles.facePad, { width, height }]}
-      >
-        {inner}
-      </LinearGradient>
+        style={[styles.faceFill, faceSize]}
+      />
     ) : (
       <View
         style={[
-          styles.face,
-          styles.facePad,
-          { width, height },
+          styles.faceFill,
+          faceSize,
           variant === 0 && styles.glassA,
           variant === 2 && styles.glassB,
           variant === 3 && styles.glassC,
         ]}
-      >
-        {inner}
-      </View>
+      />
     );
 
+  // <asscard>
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={{ width, height }}>
-      {face}
-    </Pressable>
+    <GlassInteractionSurface
+      borderRadius={CARD_RADIUS}
+      interactive
+      enableScale
+      onPress={onPress}
+      style={faceSize}
+      background={background}
+      accessibilityLabel={assignment.title}
+    >
+      <View style={[styles.facePad, faceSize]}>{inner}</View>
+    </GlassInteractionSurface>
   );
+  // </asscard>
 }
 
 const styles = StyleSheet.create({
-  face: {
-    borderRadius: 16,
-    overflow: "hidden",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.22)",
+  faceFill: {
+    borderRadius: CARD_RADIUS,
   },
   facePad: {
     padding: 12,

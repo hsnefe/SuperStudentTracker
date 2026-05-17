@@ -1,19 +1,17 @@
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   ActivityIndicator,
-  Platform,
+  Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
   View,
 } from "react-native";
+import { GlassInteractionSurface } from "@/components/course/GlassInteractionSurface";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ReactNode } from "react";
-import {
-  COURSE_BLUR_BRIDGE_HALF_PX,
-  courseHeroMinHeightPx,
-} from "@/constants/courseDetailVisual";
+import { COURSE_BLUR_BRIDGE_HALF_PX, courseHeroMinHeightPx } from "@/constants/courseDetailVisual";
+import { VerticalBlurRamp } from "@/components/course/VerticalBlurRamp";
 import { useTheme } from "@/hooks";
 
 const APP_BAR_BOTTOM_PADDING = 12;
@@ -68,17 +66,11 @@ export function CourseHeroSection({
         style={StyleSheet.absoluteFillObject}
       />
 
-      {/* Background-only blur; hero content renders above this layer. */}
       <View style={styles.blurBridge} pointerEvents="none">
-        <BlurView
-          intensity={Platform.OS === "ios" ? 55 : 35}
-          tint="dark"
-          experimentalBlurMethod={Platform.OS === "android" ? "dimezisBlurView" : undefined}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <LinearGradient
-          colors={["transparent", "rgba(10,8,12,0.92)"]}
-          style={StyleSheet.absoluteFillObject}
+        <VerticalBlurRamp
+          direction="increase"
+          height={COURSE_BLUR_BRIDGE_HALF_PX}
+          overlayGradient={["transparent", "rgba(10,8,12,0.45)", "rgba(10,8,12,0.92)"]}
         />
       </View>
 
@@ -91,31 +83,41 @@ export function CourseHeroSection({
 
         <View style={[styles.bottomBand, { gap: spacing.md }]}>
           <View style={[styles.statsRow, { gap: spacing.sm }]}>
-            <View
-              style={[
+            {/* <lcard> */}
+            <Pressable
+              style={({ pressed }) => [
                 styles.statCardLight,
                 { borderRadius: radius.lg, width: STAT_CARD_WIDTH },
+                pressed && styles.statCardLightPressed,
               ]}
             >
               <Text style={styles.statPercentOrange}>{mockStat.percentLabel}</Text>
               <Text style={styles.statCaptionDark}>{mockStat.caption}</Text>
-            </View>
+            </Pressable>
+            {/* </lcard> */}
 
-            <View
-              style={[
-                styles.statCardGlass,
-                { borderRadius: radius.lg, width: STAT_CARD_WIDTH },
-              ]}
+            {/* <rcard> */}
+            <GlassInteractionSurface
+              borderRadius={radius.lg}
+              interactive={false}
+              enableScale={false}
+              style={{ width: STAT_CARD_WIDTH }}
+              background={
+                <View style={[styles.statCardGlassBg, { borderRadius: radius.lg }]} />
+              }
             >
-              {assignmentsLoading ? (
-                <ActivityIndicator color="#fff" style={{ marginVertical: 12 }} />
-              ) : (
-                <>
-                  <Text style={styles.statNumberLight}>{activeTodos}</Text>
-                  <Text style={styles.statCaptionLight}>{todoSummary}</Text>
-                </>
-              )}
-            </View>
+              <View style={[styles.statCardGlass, { borderRadius: radius.lg }]}>
+                {assignmentsLoading ? (
+                  <ActivityIndicator color="#fff" style={{ marginVertical: 12 }} />
+                ) : (
+                  <>
+                    <Text style={styles.statNumberLight}>{activeTodos}</Text>
+                    <Text style={styles.statCaptionLight}>{todoSummary}</Text>
+                  </>
+                )}
+              </View>
+            </GlassInteractionSurface>
+            {/* </rcard> */}
           </View>
 
           <Text style={styles.heroLine2} numberOfLines={3}>
@@ -193,6 +195,10 @@ const styles = StyleSheet.create({
     minHeight: 120,
     justifyContent: "space-between",
   },
+  statCardLightPressed: {
+    opacity: 0.94,
+    transform: [{ scale: 0.98 }],
+  },
   statPercentOrange: {
     fontSize: 32,
     fontWeight: "800",
@@ -206,10 +212,11 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     marginTop: 8,
   },
-  statCardGlass: {
+  statCardGlassBg: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(255,255,255,0.12)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.2)",
+  },
+  statCardGlass: {
     padding: 14,
     minHeight: 120,
     justifyContent: "space-between",

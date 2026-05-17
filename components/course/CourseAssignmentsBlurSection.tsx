@@ -1,9 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   ActivityIndicator,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,7 +10,11 @@ import {
   type ViewStyle,
 } from "react-native";
 import { AssignmentStripCard } from "@/components/course/AssignmentStripCard";
-import { COURSE_BLUR_BRIDGE_HALF_PX } from "@/constants/courseDetailVisual";
+import { VerticalBlurRamp } from "@/components/course/VerticalBlurRamp";
+import {
+  COURSE_BLUR_BRIDGE_HALF_PX,
+  courseBlurMaxIntensity,
+} from "@/constants/courseDetailVisual";
 import { useTheme } from "@/hooks";
 import type { Assignment } from "@/types";
 
@@ -37,39 +38,35 @@ export function CourseAssignmentsBlurSection({
   style,
 }: Props) {
   const { typography, spacing } = useTheme();
-
-  const bridgeBlurProps = {
-    intensity: Platform.OS === "ios" ? 55 : 35,
-    tint: "dark" as const,
-    experimentalBlurMethod: Platform.OS === "android" ? ("dimezisBlurView" as const) : undefined,
-  };
-
-  const sectionBlurProps = {
-    intensity: Platform.OS === "ios" ? 70 : 45,
-    tint: "dark" as const,
-    experimentalBlurMethod: Platform.OS === "android" ? ("dimezisBlurView" as const) : undefined,
-  };
+  const maxIntensity = courseBlurMaxIntensity();
 
   return (
     <View style={[styles.outer, style]}>
-      <BlurView
-        {...sectionBlurProps}
-        style={[StyleSheet.absoluteFillObject, styles.bgLayer]}
-      />
-      <LinearGradient
-        colors={["rgba(18,12,22,0.55)", "rgba(8,6,12,0.92)"]}
-        style={[StyleSheet.absoluteFillObject, styles.bgLayer]}
+      <VerticalBlurRamp
+        fillParent
+        direction="decrease"
+        maxIntensity={maxIntensity}
+        overlayGradient={[
+          "rgba(18,12,22,0.72)",
+          "rgba(12,10,18,0.38)",
+          "rgba(8,6,12,0.08)",
+        ]}
+        style={styles.bgLayer}
       />
 
-      {/* Top blur band: other half of total transition height (matches hero bottom strip). */}
       <View
         style={[styles.blurTopBridge, { height: COURSE_BLUR_BRIDGE_HALF_PX }]}
         pointerEvents="none"
       >
-        <BlurView {...bridgeBlurProps} style={StyleSheet.absoluteFillObject} />
-        <LinearGradient
-          colors={["rgba(10,8,12,0.92)", "transparent"]}
-          style={StyleSheet.absoluteFillObject}
+        <VerticalBlurRamp
+          direction="decrease"
+          height={COURSE_BLUR_BRIDGE_HALF_PX}
+          maxIntensity={maxIntensity}
+          overlayGradient={[
+            "rgba(10,8,12,0.92)",
+            "rgba(10,8,12,0.4)",
+            "transparent",
+          ]}
         />
       </View>
 
