@@ -1,5 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { ASSIGNMENT_PRIORITY_OPTIONS } from "@/constants/assignmentOptions";
 import { useTheme } from "@/hooks";
 import type { Assignment } from "@/types";
 
@@ -18,6 +19,19 @@ type Props = {
   onPress?: () => void;
 };
 
+function formatDeadline(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return iso;
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function priorityLabel(priority: Assignment["priority"]): string {
+  return ASSIGNMENT_PRIORITY_OPTIONS.find((o) => o.value === priority)?.label ?? priority;
+}
+
 function assignmentProgress(assignment: Assignment): number {
   const { tasks } = assignment;
   if (tasks.length === 0) return 0;
@@ -33,6 +47,9 @@ export function AssignmentCard({ assignment, width, onPress }: Props) {
     <View style={[styles.outer, { width, backgroundColor: CARD_FACE, borderRadius: 28 }]}>
       <Text style={[styles.title, { color: TITLE_COLOR }]} numberOfLines={1}>
         {assignment.title}
+      </Text>
+      <Text style={styles.meta} numberOfLines={1}>
+        Due {formatDeadline(assignment.deadline)} · {priorityLabel(assignment.priority)}
       </Text>
 
       <View style={[styles.slot, { borderRadius: 20 }]}>
@@ -104,6 +121,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     paddingHorizontal: 11,
     marginTop: 4,
+  },
+  meta: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "rgba(15,17,21,0.65)",
+    paddingHorizontal: 11,
+    marginTop: -4,
   },
   slot: {
     height: 101,

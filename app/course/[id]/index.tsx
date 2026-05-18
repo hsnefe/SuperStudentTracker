@@ -11,8 +11,10 @@ import { splitCourseHeroTitle } from "@/components/course/courseHeroTitles";
 import { courseAssignmentsMinHeightPx } from "@/constants/courseDetailVisual";
 import { COURSE_HERO_MOCK_STAT } from "@/constants/courseHeroMock";
 import { useCourseDetailTabs, useTheme } from "@/hooks";
+import { CreateAssignmentModal } from "@/features/assignments/components/CreateAssignmentModal";
+import { useCreateAssignment } from "@/features/assignments/hooks/useCreateAssignment";
 import { loadAssignments } from "@/lib/persistence/courseAssignments";
-import type { Assignment } from "@/types";
+import type { Assignment, CreateAssignmentInput } from "@/types";
 
 export default function CourseDetailScreen() {
   const { id, title, activeSection, onSelectSection } = useCourseDetailTabs();
@@ -24,6 +26,16 @@ export default function CourseDetailScreen() {
 
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(true);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const createAssignment = useCreateAssignment();
+
+  const refreshAssignments = useCallback(() => {
+    setAssignmentsLoading(true);
+    loadAssignments(id).then((list) => {
+      setAssignments(list);
+      setAssignmentsLoading(false);
+    });
+  }, [id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -40,6 +52,16 @@ export default function CourseDetailScreen() {
       };
     }, [id]),
   );
+
+  const handleCreateAssignment = async (input: CreateAssignmentInput) => {
+    try {
+      await createAssignment.mutateAsync(input);
+      setCreateModalVisible(false);
+      refreshAssignments();
+    } catch {
+      setCreateModalVisible(false);
+    }
+  };
 
   const activeTodos = useMemo(
     () =>
@@ -85,6 +107,7 @@ export default function CourseDetailScreen() {
             courseTitle={title}
             assignments={assignments}
             loading={assignmentsLoading}
+            onAddPress={() => setCreateModalVisible(true)}
             style={{
               flex: 1,
               minHeight: courseAssignmentsMinHeightPx(windowHeight),
@@ -92,6 +115,16 @@ export default function CourseDetailScreen() {
           />
         </View>
       </ScrollView>
+
+      <CreateAssignmentModal
+        visible={createModalVisible}
+        busy={createAssignment.isPending}
+        defaultCourseId={id}
+        onClose={() => {
+          if (!createAssignment.isPending) setCreateModalVisible(false);
+        }}
+        onSubmit={handleCreateAssignment}
+      />
     </>
   );
 }

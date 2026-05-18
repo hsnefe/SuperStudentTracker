@@ -44,12 +44,44 @@ export type Task = {
   done: boolean;
 };
 
+/** Firestore bucket id for assignments not tied to a course. */
+export const NO_COURSE_ASSIGNMENTS_ID = "__none__";
+
+export type AssignmentType =
+  | "essay"
+  | "reflective_paper"
+  | "report"
+  | "case_study"
+  | "creative_writing"
+  | "group_project"
+  | "exam"
+  | "quiz"
+  | "worksheet"
+  | "reading";
+
+export type AssignmentPriority = "low" | "medium" | "high" | "emergent";
+
+export type AssignmentStatus = "not_started" | "in_progress" | "pending_review";
+
 export type Assignment = {
   id: string;
   courseId: string;
   title: string;
   description: string;
   tasks: Task[];
+  type: AssignmentType;
+  deadline: string;
+  priority: AssignmentPriority;
+  status: AssignmentStatus;
+};
+
+export type CreateAssignmentInput = {
+  title: string;
+  type: AssignmentType;
+  courseId: string;
+  deadline: string;
+  priority: AssignmentPriority;
+  status: AssignmentStatus;
 };
 
 export type GradeComponent = {

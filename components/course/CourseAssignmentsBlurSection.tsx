@@ -16,7 +16,7 @@ import {
   COURSE_BLUR_BRIDGE_HALF_PX,
   courseBlurMaxIntensity,
 } from "@/constants/courseDetailVisual";
-import { useExpandNavigation, useTheme } from "@/hooks";
+import { useTheme } from "@/hooks";
 import type { Assignment } from "@/types";
 
 const CARD_W = 168;
@@ -27,6 +27,7 @@ type Props = {
   courseTitle: string;
   assignments: Assignment[];
   loading: boolean;
+  onAddPress: () => void;
   /** Grows to fill scroll area below hero (e.g. `{ flex: 1 }`). */
   style?: StyleProp<ViewStyle>;
 };
@@ -36,10 +37,10 @@ export function CourseAssignmentsBlurSection({
   courseTitle,
   assignments,
   loading,
+  onAddPress,
   style,
 }: Props) {
   const { typography, spacing } = useTheme();
-  const { pushExpand } = useExpandNavigation();
   const addButtonRef = useRef<View>(null);
   const maxIntensity = courseBlurMaxIntensity();
 
@@ -83,15 +84,7 @@ export function CourseAssignmentsBlurSection({
           </Text>
           <Pressable
             ref={addButtonRef}
-            onPress={() =>
-              pushExpand(
-                {
-                  pathname: "/course/[id]/assignment/add",
-                  params: { id: courseId },
-                },
-                addButtonRef,
-              )
-            }
+            onPress={onAddPress}
             accessibilityRole="button"
             accessibilityLabel="Add assignment"
             hitSlop={12}

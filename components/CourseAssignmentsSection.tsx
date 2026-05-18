@@ -12,9 +12,11 @@ import {
   View,
 } from "react-native";
 import { AssignmentCard } from "@/components/AssignmentCard";
+import { CreateAssignmentModal } from "@/features/assignments/components/CreateAssignmentModal";
+import { useCreateAssignment } from "@/features/assignments/hooks/useCreateAssignment";
 import { loadAssignments } from "@/lib/persistence/courseAssignments";
 import { useTheme } from "@/hooks";
-import type { Assignment } from "@/types";
+import type { Assignment, CreateAssignmentInput } from "@/types";
 
 type Props = {
   courseId: string;
@@ -27,9 +29,19 @@ export function CourseAssignmentsSection({ courseId, courseTitle }: Props) {
   const { width: windowWidth } = useWindowDimensions();
   const cardWidth = Math.min(319, Math.max(260, windowWidth * 0.78));
   const cardGap = 16;
+  const createAssignment = useCreateAssignment();
 
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+
+  const refreshAssignments = useCallback(() => {
+    setLoading(true);
+    loadAssignments(courseId).then((list) => {
+      setAssignments(list);
+      setLoading(false);
+    });
+  }, [courseId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -47,8 +59,16 @@ export function CourseAssignmentsSection({ courseId, courseTitle }: Props) {
     }, [courseId]),
   );
 
-  const openAdd = () => {
-    router.push(`/course/${encodeURIComponent(courseId)}/assignment/add`);
+  const openAdd = () => setCreateModalVisible(true);
+
+  const handleCreate = async (input: CreateAssignmentInput) => {
+    try {
+      await createAssignment.mutateAsync(input);
+      setCreateModalVisible(false);
+      refreshAssignments();
+    } catch {
+      setCreateModalVisible(false);
+    }
   };
 
   const openAssignment = (a: Assignment) => {
@@ -110,6 +130,16 @@ export function CourseAssignmentsSection({ courseId, courseTitle }: Props) {
           <MaterialIcons name="add" size={28} color={colors.highlight} />
         </Pressable>
       </View>
+
+      <CreateAssignmentModal
+        visible={createModalVisible}
+        busy={createAssignment.isPending}
+        defaultCourseId={courseId}
+        onClose={() => {
+          if (!createAssignment.isPending) setCreateModalVisible(false);
+        }}
+        onSubmit={handleCreate}
+      />
     </View>
   );
 }

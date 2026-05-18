@@ -3,8 +3,9 @@
  */
 import { Platform } from "react-native";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import type { Assignment } from "@/types";
+import { normalizeAssignments } from "@/lib/assignmentNormalize";
 import { MOCK_HOME_ASSIGNMENTS } from "@/constants/homeMock";
+import type { Assignment } from "@/types";
 import { readCache, writeCache } from "@/lib/sqliteCache";
 import { getFirebaseFirestore, isFirebaseConfigured } from "@/lib/firebase";
 
@@ -27,8 +28,8 @@ export async function loadAssignments(courseId: string): Promise<Assignment[]> {
       const snap = await getDoc(doc(db, "courseAssignments", courseId));
       const raw = snap.data()?.assignments;
       if (raw != null) {
-        const parsed = typeof raw === "string" ? (JSON.parse(raw) as Assignment[]) : (raw as Assignment[]);
-        if (Array.isArray(parsed)) return parsed;
+        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+        if (Array.isArray(parsed)) return normalizeAssignments(parsed);
       }
     } catch {
       /* fall through */
@@ -36,11 +37,11 @@ export async function loadAssignments(courseId: string): Promise<Assignment[]> {
   }
 
   const fromSqlite = readCache<Assignment[]>(cacheKey(courseId));
-  if (fromSqlite != null) return fromSqlite;
+  if (fromSqlite != null) return normalizeAssignments(fromSqlite);
 
   if (Platform.OS === "web") {
     const mem = webMemory.get(courseId);
-    if (mem !== undefined) return mem;
+    if (mem !== undefined) return normalizeAssignments(mem);
   }
 
   return mockAssignmentsForCourse(courseId);
