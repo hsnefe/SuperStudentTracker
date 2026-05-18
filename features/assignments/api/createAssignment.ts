@@ -6,9 +6,12 @@ export function assignmentStorageBucketId(courseId: string): string {
   return courseId === NO_COURSE_ASSIGNMENTS_ID ? NO_COURSE_ASSIGNMENTS_ID : courseId;
 }
 
-export async function createAssignment(input: CreateAssignmentInput): Promise<Assignment> {
+export async function createAssignment(
+  uid: string,
+  input: CreateAssignmentInput,
+): Promise<Assignment> {
   const bucketId = assignmentStorageBucketId(input.courseId);
-  const existing = await loadAssignments(bucketId);
+  const existing = await loadAssignments(uid, bucketId);
 
   const assignment = normalizeAssignment({
     id: newAssignmentId(),
@@ -22,6 +25,6 @@ export async function createAssignment(input: CreateAssignmentInput): Promise<As
     status: input.status,
   });
 
-  await saveAssignments(bucketId, [...existing, assignment]);
+  await saveAssignments(uid, bucketId, [...existing, assignment]);
   return assignment;
 }

@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { GradeBreakdownEditor } from "@/components/GradeBreakdownEditor";
 import { parseGradeDrafts, toGradeDraft, weightsValid } from "@/lib/gradeBreakdown";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { loadGradeBreakdown, saveGradeBreakdown } from "@/lib/persistence/courseGradeBreakdown";
 import { useTheme } from "@/hooks";
 import type { CourseGradeBreakdownRow } from "@/types";
@@ -19,6 +20,7 @@ type Props = {
 };
 
 export function CourseGradeBreakdownCard({ courseId, initialRows }: Props) {
+  const { user } = useAuth();
   const { colors, radius, spacing, typography } = useTheme();
   const [savedRows, setSavedRows] = useState<CourseGradeBreakdownRow[]>(initialRows);
   const [loading, setLoading] = useState(true);
@@ -31,10 +33,11 @@ export function CourseGradeBreakdownCard({ courseId, initialRows }: Props) {
   editingRef.current = editing;
 
   useEffect(() => {
+    if (!user) return;
     let cancelled = false;
     setLoading(true);
     (async () => {
-      const loaded = await loadGradeBreakdown(courseId);
+      const loaded = await loadGradeBreakdown(user.uid, courseId);
       if (cancelled) return;
       const next = loaded ?? initialRows;
       setSavedRows(next);
@@ -44,7 +47,7 @@ export function CourseGradeBreakdownCard({ courseId, initialRows }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [courseId, initialRows]);
+  }, [courseId, initialRows, user]);
 
   const enterEdit = useCallback(() => {
     snapshotBeforeEdit.current = [...savedRows];
@@ -74,14 +77,15 @@ export function CourseGradeBreakdownCard({ courseId, initialRows }: Props) {
     setWeightError(false);
     setSaveBusy(true);
     try {
-      await saveGradeBreakdown(courseId, parsedDraftRows);
+      if (!user) return;
+      await saveGradeBreakdown(user.uid, courseId, parsedDraftRows);
       setSavedRows(parsedDraftRows);
       snapshotBeforeEdit.current = parsedDraftRows;
       setEditing(false);
     } finally {
       setSaveBusy(false);
     }
-  }, [courseId, parsedDraftRows]);
+  }, [courseId, parsedDraftRows, user]);
 
   const borderStyle = {
     backgroundColor: colors.surface,

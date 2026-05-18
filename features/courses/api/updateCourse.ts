@@ -1,6 +1,7 @@
-import { doc, updateDoc } from "firebase/firestore";
+import { updateDoc } from "firebase/firestore";
 import type { CourseGridItem } from "@/constants/coursesMock";
 import { getFirebaseFirestore, isFirebaseConfigured } from "@/lib/firebase";
+import { userCourseDoc } from "@/lib/firestore/userPaths";
 import { saveCourseSchedule } from "@/lib/persistence/courseSchedule";
 import type { UpdateCourseInput } from "@/types";
 import {
@@ -13,6 +14,7 @@ export type UpdateCourseResult = Pick<CourseGridItem, "id" | "title"> & {
 };
 
 export async function updateCourse(
+  uid: string,
   courseId: string,
   input: UpdateCourseInput,
 ): Promise<UpdateCourseResult> {
@@ -27,10 +29,10 @@ export async function updateCourse(
   let imageUrl: string | null | undefined;
 
   if (input.imageUri === null) {
-    await deleteCourseCoverImage(courseId);
+    await deleteCourseCoverImage(uid, courseId);
     imageUrl = null;
   } else if (typeof input.imageUri === "string" && input.imageUri.length > 0) {
-    imageUrl = await uploadCourseCoverImage(courseId, input.imageUri);
+    imageUrl = await uploadCourseCoverImage(uid, courseId, input.imageUri);
   }
 
   const db = getFirebaseFirestore();
@@ -45,8 +47,9 @@ export async function updateCourse(
   }
 
   await Promise.all([
-    updateDoc(doc(db, "courses", courseId), patch),
+    updateDoc(userCourseDoc(db, uid, courseId), patch),
     saveCourseSchedule(
+      uid,
       courseId,
       input.scheduleSlots.map((s) => ({ ...s, courseId })),
     ),

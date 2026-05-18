@@ -1,11 +1,15 @@
 import type { CourseGridItem } from "@/constants/coursesMock";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc } from "firebase/firestore";
 import { getFirebaseFirestore, isFirebaseConfigured } from "@/lib/firebase";
+import { userCoursesCollection } from "@/lib/firestore/userPaths";
 import { saveGradeBreakdown } from "@/lib/persistence/courseGradeBreakdown";
 import { saveCourseSchedule } from "@/lib/persistence/courseSchedule";
 import type { CreateCourseInput } from "@/types";
 
-export async function createCourse(input: CreateCourseInput): Promise<CourseGridItem> {
+export async function createCourse(
+  uid: string,
+  input: CreateCourseInput,
+): Promise<CourseGridItem> {
   if (!isFirebaseConfigured) {
     throw new Error("Firebase is not configured");
   }
@@ -15,7 +19,7 @@ export async function createCourse(input: CreateCourseInput): Promise<CourseGrid
   const absenceHours = Math.max(0, input.absenceToleranceHours);
 
   const db = getFirebaseFirestore();
-  const docRef = await addDoc(collection(db, "courses"), {
+  const docRef = await addDoc(userCoursesCollection(db, uid), {
     title: trimmed,
     image_url: null,
     lecturer_name: lecturer,
@@ -25,8 +29,9 @@ export async function createCourse(input: CreateCourseInput): Promise<CourseGrid
   const courseId = docRef.id;
 
   await Promise.all([
-    saveGradeBreakdown(courseId, input.gradeRows),
+    saveGradeBreakdown(uid, courseId, input.gradeRows),
     saveCourseSchedule(
+      uid,
       courseId,
       input.scheduleSlots.map((s) => ({ ...s, courseId })),
     ),

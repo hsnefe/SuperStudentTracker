@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { AssignmentCard } from "@/components/AssignmentCard";
 import { CreateAssignmentModal } from "@/features/assignments/components/CreateAssignmentModal";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useCreateAssignment } from "@/features/assignments/hooks/useCreateAssignment";
 import { loadAssignments } from "@/lib/persistence/courseAssignments";
 import { useTheme } from "@/hooks";
@@ -24,6 +25,7 @@ type Props = {
 };
 
 export function CourseAssignmentsSection({ courseId, courseTitle }: Props) {
+  const { user } = useAuth();
   const router = useRouter();
   const { colors, typography, spacing, radius } = useTheme();
   const { width: windowWidth } = useWindowDimensions();
@@ -36,18 +38,20 @@ export function CourseAssignmentsSection({ courseId, courseTitle }: Props) {
   const [createModalVisible, setCreateModalVisible] = useState(false);
 
   const refreshAssignments = useCallback(() => {
+    if (!user) return;
     setLoading(true);
-    loadAssignments(courseId).then((list) => {
+    loadAssignments(user.uid, courseId).then((list) => {
       setAssignments(list);
       setLoading(false);
     });
-  }, [courseId]);
+  }, [courseId, user]);
 
   useFocusEffect(
     useCallback(() => {
+      if (!user) return;
       let cancelled = false;
       setLoading(true);
-      loadAssignments(courseId).then((list) => {
+      loadAssignments(user.uid, courseId).then((list) => {
         if (!cancelled) {
           setAssignments(list);
           setLoading(false);
@@ -56,7 +60,7 @@ export function CourseAssignmentsSection({ courseId, courseTitle }: Props) {
       return () => {
         cancelled = true;
       };
-    }, [courseId]),
+    }, [courseId, user]),
   );
 
   const openAdd = () => setCreateModalVisible(true);

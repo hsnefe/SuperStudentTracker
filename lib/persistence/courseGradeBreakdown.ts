@@ -3,24 +3,27 @@
  * else in-memory map (web without Firebase).
  */
 import { Platform } from "react-native";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { getDoc, setDoc } from "firebase/firestore";
 import type { CourseGradeBreakdownRow } from "@/types";
 import { readCache, writeCache } from "@/lib/sqliteCache";
+import { userCourseGradeBreakdownDoc } from "@/lib/firestore/userPaths";
 import { getFirebaseFirestore, isFirebaseConfigured } from "@/lib/firebase";
+import { getGradeMemory } from "./memoryCaches";
 
 const CACHE_KEY_PREFIX = "course_grade_breakdown:";
 
-const webMemory = new Map<string, CourseGradeBreakdownRow[]>();
-
-function cacheKey(courseId: string): string {
-  return `${CACHE_KEY_PREFIX}${courseId}`;
+function cacheKey(uid: string, courseId: string): string {
+  return `${CACHE_KEY_PREFIX}${uid}:${courseId}`;
 }
 
-export async function loadGradeBreakdown(courseId: string): Promise<CourseGradeBreakdownRow[] | null> {
+export async function loadGradeBreakdown(
+  uid: string,
+  courseId: string,
+): Promise<CourseGradeBreakdownRow[] | null> {
   if (isFirebaseConfigured) {
     try {
       const db = getFirebaseFirestore();
-      const snap = await getDoc(doc(db, "courseGradeBreakdowns", courseId));
+      const snap = await getDoc(userCourseGradeBreakdownDoc(db, uid, courseId));
       const rows = snap.data()?.rows as CourseGradeBreakdownRow[] | undefined;
       if (!rows?.length) return null;
       return rows;
@@ -29,22 +32,26 @@ export async function loadGradeBreakdown(courseId: string): Promise<CourseGradeB
     }
   }
 
-  const fromSqlite = readCache<CourseGradeBreakdownRow[]>(cacheKey(courseId));
+  const fromSqlite = readCache<CourseGradeBreakdownRow[]>(cacheKey(uid, courseId));
   if (fromSqlite != null) return fromSqlite;
 
   if (Platform.OS === "web") {
-    const mem = webMemory.get(courseId);
-    return mem !== undefined ? mem : null;
+    const mem = getGradeMemory().get(cacheKey(uid, courseId));
+    return mem !== undefined ? (mem as CourseGradeBreakdownRow[]) : null;
   }
 
   return null;
 }
 
-export async function saveGradeBreakdown(courseId: string, rows: CourseGradeBreakdownRow[]): Promise<void> {
+export async function saveGradeBreakdown(
+  uid: string,
+  courseId: string,
+  rows: CourseGradeBreakdownRow[],
+): Promise<void> {
   if (isFirebaseConfigured) {
     try {
       const db = getFirebaseFirestore();
-      await setDoc(doc(db, "courseGradeBreakdowns", courseId), {
+      await setDoc(userCourseGradeBreakdownDoc(db, uid, courseId), {
         rows,
         updatedAt: new Date().toISOString(),
       });
@@ -54,8 +61,9 @@ export async function saveGradeBreakdown(courseId: string, rows: CourseGradeBrea
     }
   }
 
-  writeCache(cacheKey(courseId), rows);
+  const key = cacheKey(uid, courseId);
+  writeCache(key, rows);
   if (Platform.OS === "web") {
-    webMemory.set(courseId, rows);
+    getGradeMemory().set(key, rows);
   }
 }

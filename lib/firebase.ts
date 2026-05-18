@@ -1,7 +1,12 @@
 import { type FirebaseApp, getApp, getApps, initializeApp } from "firebase/app";
 import { type Auth, getAuth } from "firebase/auth";
 import { type FirebaseStorage, getStorage } from "firebase/storage";
-import { type Firestore, getFirestore } from "firebase/firestore";
+import {
+  type Firestore,
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+} from "firebase/firestore";
 import { type Functions, getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
@@ -15,9 +20,11 @@ const firebaseConfig = {
 
 const isPlaceholder =
   !firebaseConfig.apiKey ||
+  !firebaseConfig.authDomain ||
   !firebaseConfig.projectId ||
   !firebaseConfig.appId ||
   firebaseConfig.apiKey.includes("your-api-key") ||
+  firebaseConfig.authDomain.includes("your-project-id") ||
   firebaseConfig.projectId.includes("your-project-id") ||
   firebaseConfig.appId.includes("your-app-id");
 
@@ -39,7 +46,14 @@ function getFirebaseApp(): FirebaseApp {
 
 export function getFirebaseFirestore(): Firestore {
   if (!cachedDb) {
-    cachedDb = getFirestore(getFirebaseApp());
+    const app = getFirebaseApp();
+    try {
+      cachedDb = initializeFirestore(app, {
+        localCache: persistentLocalCache(),
+      });
+    } catch {
+      cachedDb = getFirestore(app);
+    }
   }
   return cachedDb;
 }

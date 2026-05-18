@@ -1,7 +1,8 @@
-import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseFirestore, isFirebaseConfigured } from "@/lib/firebase";
+import { userCourseDoc } from "@/lib/firestore/userPaths";
 import { loadCourseSchedule } from "@/lib/persistence/courseSchedule";
 import type { CourseEditSnapshot, CreateCourseScheduleSlot } from "@/types";
+import { getDoc } from "firebase/firestore";
 
 type CourseDoc = {
   title?: string | null;
@@ -25,15 +26,18 @@ function scheduleToCreateSlots(
   }));
 }
 
-export async function fetchCourseForEdit(courseId: string): Promise<CourseEditSnapshot> {
+export async function fetchCourseForEdit(
+  uid: string,
+  courseId: string,
+): Promise<CourseEditSnapshot> {
   if (!isFirebaseConfigured) {
     throw new Error("Firebase is not configured");
   }
 
   const db = getFirebaseFirestore();
   const [courseSnap, scheduleSlots] = await Promise.all([
-    getDoc(doc(db, "courses", courseId)),
-    loadCourseSchedule(courseId),
+    getDoc(userCourseDoc(db, uid, courseId)),
+    loadCourseSchedule(uid, courseId),
   ]);
 
   if (!courseSnap.exists()) {

@@ -17,10 +17,12 @@ import { EditCourseModal } from "@/features/courses/components/EditCourseModal";
 import { useCourseForEdit } from "@/features/courses/hooks/useCourseForEdit";
 import { useDeleteCourse } from "@/features/courses/hooks/useDeleteCourse";
 import { useUpdateCourse } from "@/features/courses/hooks/useUpdateCourse";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { loadAssignments } from "@/lib/persistence/courseAssignments";
 import type { Assignment, CreateAssignmentInput, UpdateCourseInput } from "@/types";
 
 export default function CourseDetailScreen() {
+  const { user } = useAuth();
   const router = useRouter();
   const { id, title, activeSection, onSelectSection } = useCourseDetailTabs();
   const { colors, spacing } = useTheme();
@@ -39,18 +41,20 @@ export default function CourseDetailScreen() {
   const courseForEdit = useCourseForEdit(id, editModalVisible);
 
   const refreshAssignments = useCallback(() => {
+    if (!user) return;
     setAssignmentsLoading(true);
-    loadAssignments(id).then((list) => {
+    loadAssignments(user.uid, id).then((list) => {
       setAssignments(list);
       setAssignmentsLoading(false);
     });
-  }, [id]);
+  }, [id, user]);
 
   useFocusEffect(
     useCallback(() => {
+      if (!user) return;
       let cancelled = false;
       setAssignmentsLoading(true);
-      loadAssignments(id).then((list) => {
+      loadAssignments(user.uid, id).then((list) => {
         if (!cancelled) {
           setAssignments(list);
           setAssignmentsLoading(false);
@@ -59,7 +63,7 @@ export default function CourseDetailScreen() {
       return () => {
         cancelled = true;
       };
-    }, [id]),
+    }, [id, user]),
   );
 
   const handleCreateAssignment = async (input: CreateAssignmentInput) => {

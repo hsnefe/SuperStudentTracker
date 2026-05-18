@@ -45,3 +45,9 @@ export function writeCache(key: string, value: unknown): void {
     Date.now(),
   );
 }
+
+export function clearAllUserCache(): void {
+  const db = getLocalDb();
+  if (!db) return;
+  db.runSync("DELETE FROM cache");
+}
