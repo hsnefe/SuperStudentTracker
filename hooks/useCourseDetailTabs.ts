@@ -1,11 +1,10 @@
 import type { Href } from "expo-router";
-import { useLocalSearchParams, usePathname } from "expo-router";
-import { useCallback, useMemo, type RefObject } from "react";
-import { View } from "react-native";
+import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
+import { useCallback, useMemo } from "react";
 import type { CourseDetailSection } from "@/components/course/CourseDetailAppBar";
-import { useExpandNavigation } from "./useExpandNavigation";
 
 export function useCourseDetailTabs() {
+  const router = useRouter();
   const pathname = usePathname();
   const params = useLocalSearchParams<{ id: string | string[]; title?: string | string[] }>();
 
@@ -26,8 +25,6 @@ export function useCourseDetailTabs() {
     return "home";
   }, [pathname]);
 
-  const { replaceExpand } = useExpandNavigation();
-
   const sectionHref = useCallback(
     (section: CourseDetailSection): Href => {
       if (section === "home") {
@@ -42,10 +39,10 @@ export function useCourseDetailTabs() {
   );
 
   const onSelectSection = useCallback(
-    (section: CourseDetailSection, sourceRef?: RefObject<View | null>) => {
-      replaceExpand(sectionHref(section), sourceRef ?? { current: null });
+    (section: CourseDetailSection) => {
+      router.replace(sectionHref(section));
     },
-    [replaceExpand, sectionHref],
+    [router, sectionHref],
   );
 
   return { id, title, activeSection, onSelectSection, sectionHref };

@@ -1,7 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useRef } from "react";
-import { Alert, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect } from "react";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -22,10 +22,8 @@ export type { CourseDetailSection };
 
 type Props = {
   activeSection: CourseDetailSection;
-  onSelectSection: (
-    section: CourseDetailSection,
-    sourceRef?: { current: View | null },
-  ) => void;
+  onSelectSection: (section: CourseDetailSection) => void;
+  onEditPress?: () => void;
 };
 
 const PILL_BG = "rgba(15, 15, 18, 0.55)";
@@ -46,11 +44,9 @@ function movePillIndicator(section: CourseDetailSection, animate: boolean) {
   pillIndicatorReady.value = 1;
 }
 
-export function CourseDetailAppBar({ activeSection, onSelectSection }: Props) {
+export function CourseDetailAppBar({ activeSection, onSelectSection, onEditPress }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const tabRefs = useRef<Partial<Record<CourseDetailSection, View | null>>>({});
-
   useEffect(() => {
     if (!pillHasLaidOut) return;
     movePillIndicator(activeSection, true);
@@ -70,7 +66,7 @@ export function CourseDetailAppBar({ activeSection, onSelectSection }: Props) {
         movePillIndicator(key, pillHasLaidOut);
         markPillLaidOut();
       }
-      onSelectSection(key, { current: tabRefs.current[key] ?? null });
+      onSelectSection(key);
     },
     [activeSection, onSelectSection],
   );
@@ -80,10 +76,6 @@ export function CourseDetailAppBar({ activeSection, onSelectSection }: Props) {
     transform: [{ translateX: pillIndicatorX.value }],
     width: pillIndicatorW.value,
   }));
-
-  const onPencil = () => {
-    Alert.alert("Edit", "Coming soon.");
-  };
 
   const goMainHome = () => {
     router.replace("/(tabs)");
@@ -112,9 +104,6 @@ export function CourseDetailAppBar({ activeSection, onSelectSection }: Props) {
             return (
               <Pressable
                 key={key}
-                ref={(node) => {
-                  tabRefs.current[key] = node;
-                }}
                 onPress={() => onTabPress(key)}
                 onLayout={(e) => {
                   const { x, width } = e.nativeEvent.layout;
@@ -135,14 +124,16 @@ export function CourseDetailAppBar({ activeSection, onSelectSection }: Props) {
       </View>
 
       <View style={styles.iconSlot}>
-        <Pressable
-          onPress={onPencil}
-          style={styles.iconCircle}
-          accessibilityRole="button"
-          accessibilityLabel="Edit"
-        >
-          <MaterialIcons name="edit" size={20} color="#fff" />
-        </Pressable>
+        {onEditPress ? (
+          <Pressable
+            onPress={onEditPress}
+            style={styles.iconCircle}
+            accessibilityRole="button"
+            accessibilityLabel="Edit course"
+          >
+            <MaterialIcons name="edit" size={20} color="#fff" />
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );

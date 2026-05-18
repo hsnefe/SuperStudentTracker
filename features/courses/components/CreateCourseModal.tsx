@@ -15,6 +15,7 @@ import {
 import { CourseScheduleEditor } from "@/components/CourseScheduleEditor";
 import { GradeBreakdownEditor } from "@/components/GradeBreakdownEditor";
 import { DEFAULT_CREATE_GRADE_ROWS } from "@/constants/courseDetailMock";
+import { parseAbsenceHours } from "@/lib/courseForm";
 import { parseGradeDrafts, toGradeDraft, weightsValid } from "@/lib/gradeBreakdown";
 import { useTheme } from "@/hooks";
 import type { CreateCourseInput, CreateCourseScheduleSlot } from "@/types";
@@ -25,14 +26,6 @@ type Props = {
   onClose: () => void;
   onSubmit: (input: CreateCourseInput) => void;
 };
-
-function parseAbsenceHours(input: string): number | null {
-  const trimmed = input.trim().replace(",", ".");
-  if (!trimmed.length) return 0;
-  const n = Number.parseFloat(trimmed);
-  if (!Number.isFinite(n) || n < 0) return null;
-  return n;
-}
 
 const MODAL_BASE_MAX_WIDTH = 520;
 const MODAL_MAX_WIDTH = MODAL_BASE_MAX_WIDTH * 3;

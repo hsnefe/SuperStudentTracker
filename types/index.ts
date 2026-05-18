@@ -27,6 +27,23 @@ export type CreateCourseInput = {
   scheduleSlots: CreateCourseScheduleSlot[];
 };
 
+export type UpdateCourseInput = {
+  title: string;
+  lecturerName: string;
+  absenceToleranceHours: number;
+  scheduleSlots: CreateCourseScheduleSlot[];
+  /** Local URI from image picker; omit = keep existing; null = remove image */
+  imageUri?: string | null;
+};
+
+export type CourseEditSnapshot = {
+  title: string;
+  lecturerName: string;
+  absenceToleranceHours: number;
+  imageUrl: string | null;
+  scheduleSlots: CreateCourseScheduleSlot[];
+};
+
 export type AttendanceStatus = "present" | "absent";
 
 export type AttendanceRecord = {
