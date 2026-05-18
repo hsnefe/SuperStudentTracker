@@ -26,3 +26,9 @@ const FALLBACK: CourseGradeBreakdownRow[] = [
 export function getMockGradeRowsForCourse(courseId: string): CourseGradeBreakdownRow[] {
   return DEFAULT_BY_COURSE[courseId] ?? FALLBACK;
 }
+
+/** Initial grade breakdown rows for the create-course modal. */
+export const DEFAULT_CREATE_GRADE_ROWS: CourseGradeBreakdownRow[] = [
+  { id: "new-g-mid", label: "Vize", weightPercent: 40, scoreText: "TBA" },
+  { id: "new-g-fin", label: "Final", weightPercent: 60, scoreText: "TBA" },
+];

@@ -5,62 +5,13 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
+import { GradeBreakdownEditor } from "@/components/GradeBreakdownEditor";
+import { parseGradeDrafts, toGradeDraft, weightsValid } from "@/lib/gradeBreakdown";
 import { loadGradeBreakdown, saveGradeBreakdown } from "@/lib/persistence/courseGradeBreakdown";
 import { useTheme } from "@/hooks";
 import type { CourseGradeBreakdownRow } from "@/types";
-
-const WEIGHT_EPS = 0.01;
-
-/** UUID v4-shaped id for stable local and cloud row identities. */
-function newRowId(): string {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
-function weightsSum(rows: CourseGradeBreakdownRow[]): number {
-  return rows.reduce((acc, r) => acc + (Number.isFinite(r.weightPercent) ? r.weightPercent : 0), 0);
-}
-
-function weightsValid(rows: CourseGradeBreakdownRow[]): boolean {
-  return Math.abs(weightsSum(rows) - 100) <= WEIGHT_EPS;
-}
-
-type DraftRow = {
-  id: string;
-  label: string;
-  weightInput: string;
-  scoreInput: string;
-};
-
-function toDraft(row: CourseGradeBreakdownRow): DraftRow {
-  const score =
-    row.scoreText.trim().toUpperCase() === "TBA" ? "" : row.scoreText.trim();
-  return {
-    id: row.id,
-    label: row.label,
-    weightInput: String(row.weightPercent),
-    scoreInput: score,
-  };
-}
-
-function fromDraft(d: DraftRow): CourseGradeBreakdownRow | null {
-  const label = d.label.trim();
-  const w = Number.parseFloat(d.weightInput.replace(",", "."));
-  if (!label.length || !Number.isFinite(w)) return null;
-  const scoreRaw = d.scoreInput.trim();
-  if (scoreRaw.length === 0) {
-    return { id: d.id, label, weightPercent: w, scoreText: "TBA" };
-  }
-  const scoreNum = Number.parseFloat(scoreRaw.replace(",", "."));
-  if (!Number.isFinite(scoreNum)) return null;
-  return { id: d.id, label, weightPercent: w, scoreText: String(scoreNum) };
-}
 
 type Props = {
   courseId: string;
@@ -72,7 +23,7 @@ export function CourseGradeBreakdownCard({ courseId, initialRows }: Props) {
   const [savedRows, setSavedRows] = useState<CourseGradeBreakdownRow[]>(initialRows);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [draftRows, setDraftRows] = useState<DraftRow[]>(() => initialRows.map(toDraft));
+  const [draftRows, setDraftRows] = useState(() => initialRows.map(toGradeDraft));
   const [weightError, setWeightError] = useState(false);
   const [saveBusy, setSaveBusy] = useState(false);
   const snapshotBeforeEdit = useRef<CourseGradeBreakdownRow[]>(initialRows);
@@ -87,7 +38,7 @@ export function CourseGradeBreakdownCard({ courseId, initialRows }: Props) {
       if (cancelled) return;
       const next = loaded ?? initialRows;
       setSavedRows(next);
-      setDraftRows((draft) => (editingRef.current ? draft : next.map(toDraft)));
+      if (!editingRef.current) setDraftRows(next.map(toGradeDraft));
       setLoading(false);
     })();
     return () => {
@@ -97,7 +48,7 @@ export function CourseGradeBreakdownCard({ courseId, initialRows }: Props) {
 
   const enterEdit = useCallback(() => {
     snapshotBeforeEdit.current = [...savedRows];
-    setDraftRows(savedRows.map(toDraft));
+    setDraftRows(savedRows.map(toGradeDraft));
     setWeightError(false);
     setEditing(true);
   }, [savedRows]);
@@ -105,20 +56,12 @@ export function CourseGradeBreakdownCard({ courseId, initialRows }: Props) {
   const cancelEdit = useCallback(() => {
     const snap = snapshotBeforeEdit.current;
     setSavedRows(snap);
-    setDraftRows(snap.map(toDraft));
+    setDraftRows(snap.map(toGradeDraft));
     setWeightError(false);
     setEditing(false);
   }, []);
 
-  const parsedDraftRows = useMemo((): CourseGradeBreakdownRow[] | null => {
-    const out: CourseGradeBreakdownRow[] = [];
-    for (const d of draftRows) {
-      const row = fromDraft(d);
-      if (!row) return null;
-      out.push(row);
-    }
-    return out;
-  }, [draftRows]);
+  const parsedDraftRows = useMemo(() => parseGradeDrafts(draftRows), [draftRows]);
 
   const canSave =
     parsedDraftRows !== null && weightsValid(parsedDraftRows) && draftRows.length > 0;
@@ -139,18 +82,6 @@ export function CourseGradeBreakdownCard({ courseId, initialRows }: Props) {
       setSaveBusy(false);
     }
   }, [courseId, parsedDraftRows]);
-
-  const addRow = useCallback(() => {
-    setDraftRows((prev) => [...prev, { id: newRowId(), label: "", weightInput: "", scoreInput: "" }]);
-  }, []);
-
-  const removeRow = useCallback((id: string) => {
-    setDraftRows((prev) => prev.filter((r) => r.id !== id));
-  }, []);
-
-  const updateDraft = useCallback((id: string, patch: Partial<DraftRow>) => {
-    setDraftRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-  }, []);
 
   const borderStyle = {
     backgroundColor: colors.surface,
@@ -186,84 +117,19 @@ export function CourseGradeBreakdownCard({ courseId, initialRows }: Props) {
       </View>
 
       {!editing ? (
-        <View style={{ gap: spacing.xs }}>
-          {savedRows.map((row) => (
-            <View key={row.id} style={styles.tabularRow}>
-              <Text style={[styles.colLabel, typography.body, { color: colors.textPrimary }]} numberOfLines={1}>
-                {row.label}
-              </Text>
-              <Text style={[styles.colWeight, typography.body, { color: colors.textSecondary }]}>
-                ({formatPct(row.weightPercent)}):
-              </Text>
-              <Text style={[styles.colScore, typography.body, { color: colors.textPrimary }]}>
-                {row.scoreText.trim().length === 0 ? "TBA" : row.scoreText}
-              </Text>
-            </View>
-          ))}
-        </View>
+        <GradeBreakdownEditor mode="readonly" rows={savedRows} />
       ) : (
         <>
-          <View style={{ gap: spacing.sm }}>
-            {draftRows.map((row) => (
-              <View key={row.id} style={styles.editRow}>
-                <TextInput
-                  value={row.label}
-                  onChangeText={(t) => updateDraft(row.id, { label: t })}
-                  placeholder="Label"
-                  placeholderTextColor={colors.textMuted}
-                  style={[styles.input, typography.body, { color: colors.textPrimary, borderColor: colors.border }]}
-                />
-                <TextInput
-                  value={row.weightInput}
-                  onChangeText={(t) => updateDraft(row.id, { weightInput: t })}
-                  placeholder="%"
-                  keyboardType="decimal-pad"
-                  placeholderTextColor={colors.textMuted}
-                  style={[
-                    styles.inputSmall,
-                    typography.body,
-                    { color: colors.textPrimary, borderColor: colors.border },
-                  ]}
-                />
-                <TextInput
-                  value={row.scoreInput}
-                  onChangeText={(t) => updateDraft(row.id, { scoreInput: t })}
-                  placeholder="TBA if empty"
-                  keyboardType="decimal-pad"
-                  placeholderTextColor={colors.textMuted}
-                  style={[
-                    styles.inputSmall,
-                    typography.body,
-                    { color: colors.textPrimary, borderColor: colors.border },
-                  ]}
-                />
-                <Pressable
-                  onPress={() => removeRow(row.id)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Remove component"
-                  hitSlop={8}
-                >
-                  <MaterialIcons name="delete-outline" size={22} color={colors.danger} />
-                </Pressable>
-              </View>
-            ))}
-          </View>
-
-          {weightError || (parsedDraftRows !== null && !weightsValid(parsedDraftRows)) ? (
-            <Text style={[typography.caption, { color: colors.warning }]}>
-              Weights must sum to 100% before saving.
-            </Text>
-          ) : null}
-          {parsedDraftRows === null ? (
-            <Text style={[typography.caption, { color: colors.warning }]}>
-              Fill label, numeric weight, and numeric score (or leave score empty for TBA).
-            </Text>
-          ) : null}
+          <GradeBreakdownEditor
+            mode="edit"
+            draftRows={draftRows}
+            onDraftChange={setDraftRows}
+            showWeightError={
+              weightError || (parsedDraftRows !== null && !weightsValid(parsedDraftRows))
+            }
+          />
 
           <View style={styles.footerActions}>
-            <Pressable onPress={addRow} style={styles.iconBtn} accessibilityRole="button" hitSlop={8}>
-              <MaterialIcons name="add-circle-outline" size={28} color={colors.highlight} />
-            </Pressable>
             <Pressable
               onPress={save}
               disabled={!canSave || saveBusy}
@@ -274,7 +140,9 @@ export function CourseGradeBreakdownCard({ courseId, initialRows }: Props) {
               {saveBusy ? (
                 <ActivityIndicator color={colors.primaryDark} size="small" />
               ) : (
-                <Text style={[typography.caption, { color: colors.primaryDark, fontWeight: "700" }]}>Save</Text>
+                <Text style={[typography.caption, { color: colors.primaryDark, fontWeight: "700" }]}>
+                  Save
+                </Text>
               )}
             </Pressable>
           </View>
@@ -288,11 +156,6 @@ export function CourseGradeBreakdownCard({ courseId, initialRows }: Props) {
   );
 }
 
-function formatPct(w: number): string {
-  if (Number.isInteger(w)) return `%${w}`;
-  return `%${w}`;
-}
-
 const styles = StyleSheet.create({
   loadingBox: {
     minHeight: 120,
@@ -304,54 +167,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  tabularRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  colLabel: {
-    flex: 2,
-    minWidth: 0,
-  },
-  colWeight: {
-    flex: 1,
-    textAlign: "center",
-  },
-  colScore: {
-    flex: 1,
-    textAlign: "right",
-    fontVariant: ["tabular-nums"],
-  },
-  editRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  input: {
-    flex: 2,
-    minWidth: 0,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  inputSmall: {
-    width: 72,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    fontVariant: ["tabular-nums"],
-  },
   footerActions: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-end",
     gap: 16,
     marginTop: 4,
-  },
-  iconBtn: {
-    padding: 4,
   },
   saveBtn: {
     paddingHorizontal: 16,

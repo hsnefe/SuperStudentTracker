@@ -16,6 +16,17 @@ export type ScheduleSlot = {
   location?: string;
 };
 
+/** Schedule slot without courseId — used when creating a course. */
+export type CreateCourseScheduleSlot = Omit<ScheduleSlot, "courseId">;
+
+export type CreateCourseInput = {
+  title: string;
+  lecturerName: string;
+  absenceToleranceHours: number;
+  gradeRows: CourseGradeBreakdownRow[];
+  scheduleSlots: CreateCourseScheduleSlot[];
+};
+
 export type AttendanceStatus = "present" | "absent";
 
 export type AttendanceRecord = {
