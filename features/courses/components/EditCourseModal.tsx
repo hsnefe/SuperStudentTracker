@@ -146,11 +146,11 @@ export function EditCourseModal({
     if (busy) return;
     if (isDirty) {
       Alert.alert(
-        "Kaydedilmemiş değişiklikler",
-        "Yaptığınız değişiklikler kaybolacak.",
+        "Unsaved changes",
+        "Your changes will be lost.",
         [
-          { text: "İptal", style: "cancel" },
-          { text: "Kaydetmeden çık", style: "destructive", onPress: onClose },
+          { text: "Cancel", style: "cancel" },
+          { text: "Discard", style: "destructive", onPress: onClose },
         ],
       );
       return;
@@ -161,7 +161,10 @@ export function EditCourseModal({
   const pickImage = useCallback(async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("İzin gerekli", "Galeriye erişim için izin vermeniz gerekiyor.");
+      Alert.alert(
+        "Permission required",
+        "Allow photo library access to choose a cover image.",
+      );
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -212,11 +215,11 @@ export function EditCourseModal({
   const confirmDelete = useCallback(() => {
     if (busy) return;
     Alert.alert(
-      "Kursu sil",
-      "Bu kurs ve ilişkili program, notlar ve ödevler kalıcı olarak silinecek.",
+      "Delete course",
+      "This course and its schedule, grades, and assignments will be permanently deleted.",
       [
-        { text: "İptal", style: "cancel" },
-        { text: "Sil", style: "destructive", onPress: onDelete },
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: onDelete },
       ],
     );
   }, [busy, onDelete]);
@@ -251,7 +254,7 @@ export function EditCourseModal({
           ]}
           onPress={(e) => e.stopPropagation()}
         >
-          <Text style={[typography.title, { color: colors.textPrimary }]}>Dersi düzenle</Text>
+          <Text style={[typography.title, { color: colors.textPrimary }]}>Edit course</Text>
 
           {loading ? (
             <View style={styles.centered}>
@@ -263,7 +266,7 @@ export function EditCourseModal({
                 {loadError.message}
               </Text>
               <Pressable onPress={onClose} style={{ marginTop: spacing.md }}>
-                <Text style={[typography.caption, { color: colors.accent }]}>Kapat</Text>
+                <Text style={[typography.caption, { color: colors.accent }]}>Close</Text>
               </Pressable>
             </View>
           ) : (
@@ -282,7 +285,7 @@ export function EditCourseModal({
                     <Text
                       style={[typography.caption, styles.label, { color: colors.textSecondary }]}
                     >
-                      Kurs resmi
+                      Course cover
                     </Text>
                     <Image
                       source={previewUri ? { uri: previewUri } : PLACEHOLDER}
@@ -296,7 +299,7 @@ export function EditCourseModal({
                         style={[styles.imageBtn, { borderColor: colors.border, borderRadius: radius.md }]}
                       >
                         <Text style={[typography.caption, { color: colors.textPrimary }]}>
-                          Galeriden seç
+                          Choose from gallery
                         </Text>
                       </Pressable>
                       {(previewUri || initial?.imageUrl) && !removeImage ? (
@@ -306,7 +309,7 @@ export function EditCourseModal({
                           style={[styles.imageBtn, { borderColor: colors.border, borderRadius: radius.md }]}
                         >
                           <Text style={[typography.caption, { color: colors.warning }]}>
-                            Resmi kaldır
+                            Remove image
                           </Text>
                         </Pressable>
                       ) : null}
@@ -317,12 +320,12 @@ export function EditCourseModal({
                     <Text
                       style={[typography.caption, styles.label, { color: colors.textSecondary }]}
                     >
-                      Ders Adı
+                      Course name
                     </Text>
                     <TextInput
                       value={title}
                       onChangeText={setTitle}
-                      placeholder="Örn. Veri Yapıları"
+                      placeholder="e.g. Data Structures"
                       placeholderTextColor={colors.textMuted}
                       editable={!busy}
                       style={inputStyle}
@@ -333,12 +336,12 @@ export function EditCourseModal({
                     <Text
                       style={[typography.caption, styles.label, { color: colors.textSecondary }]}
                     >
-                      Öğretim Üyesi
+                      Instructor
                     </Text>
                     <TextInput
                       value={lecturerName}
                       onChangeText={setLecturerName}
-                      placeholder="Örn. Dr. Ayşe Yılmaz"
+                      placeholder="e.g. Dr. Jane Smith"
                       placeholderTextColor={colors.textMuted}
                       editable={!busy}
                       style={inputStyle}
@@ -349,7 +352,7 @@ export function EditCourseModal({
                     <Text
                       style={[typography.caption, styles.label, { color: colors.textSecondary }]}
                     >
-                      Devamsızlık Toleransı (saat)
+                      Absence tolerance (hours)
                     </Text>
                     <TextInput
                       value={absenceInput}
@@ -362,7 +365,7 @@ export function EditCourseModal({
                     />
                     {absenceInput.trim().length > 0 && !absenceValid ? (
                       <Text style={[typography.caption, { color: colors.warning }]}>
-                        Geçerli bir saat değeri girin (0 veya üzeri).
+                        Enter a valid number of hours (0 or greater).
                       </Text>
                     ) : null}
                   </View>
@@ -371,7 +374,7 @@ export function EditCourseModal({
                     <Text
                       style={[typography.caption, styles.label, { color: colors.textSecondary }]}
                     >
-                      Ders Programı
+                      Class schedule
                     </Text>
                     <CourseScheduleEditor
                       slots={scheduleSlots}
@@ -383,45 +386,50 @@ export function EditCourseModal({
                 </ScrollView>
               </KeyboardAvoidingView>
 
-              <Pressable
-                onPress={confirmDelete}
-                disabled={busy}
-                style={styles.deleteBtn}
-                accessibilityRole="button"
-              >
-                <Text style={[typography.caption, { color: colors.warning, fontWeight: "700" }]}>
-                  Kursu sil
-                </Text>
-              </Pressable>
-
-              <View style={[styles.actions, { gap: spacing.sm, borderTopColor: colors.border }]}>
+              <View style={[styles.actions, { borderTopColor: colors.border }]}>
                 <Pressable
-                  onPress={requestClose}
+                  onPress={confirmDelete}
                   disabled={busy}
-                  style={[styles.secondaryBtn, { borderColor: colors.border, borderRadius: radius.md }]}
-                  accessibilityRole="button"
-                >
-                  <Text style={[typography.caption, { color: colors.textSecondary }]}>İptal</Text>
-                </Pressable>
-                <Pressable
-                  onPress={handleSubmit}
-                  disabled={!canSubmit}
                   style={[
-                    styles.primaryBtn,
-                    {
-                      backgroundColor: colors.accent,
-                      borderRadius: radius.md,
-                      opacity: canSubmit ? 1 : 0.45,
-                    },
+                    styles.secondaryBtn,
+                    { borderColor: colors.danger, borderRadius: radius.md, opacity: busy ? 0.45 : 1 },
                   ]}
                   accessibilityRole="button"
                 >
-                  {busy ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={[typography.caption, styles.primaryLabel]}>Kaydet</Text>
-                  )}
+                  <Text style={[typography.caption, { color: colors.danger, fontWeight: "700" }]}>
+                    Delete course
+                  </Text>
                 </Pressable>
+
+                <View style={[styles.actionsRight, { gap: spacing.sm }]}>
+                  <Pressable
+                    onPress={requestClose}
+                    disabled={busy}
+                    style={[styles.secondaryBtn, { borderColor: colors.border, borderRadius: radius.md }]}
+                    accessibilityRole="button"
+                  >
+                    <Text style={[typography.caption, { color: colors.textSecondary }]}>Cancel</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleSubmit}
+                    disabled={!canSubmit}
+                    style={[
+                      styles.primaryBtn,
+                      {
+                        backgroundColor: colors.accent,
+                        borderRadius: radius.md,
+                        opacity: canSubmit ? 1 : 0.45,
+                      },
+                    ]}
+                    accessibilityRole="button"
+                  >
+                    {busy ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={[typography.caption, styles.primaryLabel]}>Save</Text>
+                    )}
+                  </Pressable>
+                </View>
               </View>
             </>
           )}
@@ -482,15 +490,16 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderWidth: 1,
   },
-  deleteBtn: {
-    alignSelf: "flex-start",
-    paddingVertical: 4,
-  },
   actions: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingTop: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  actionsRight: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   secondaryBtn: {
     paddingHorizontal: 16,

@@ -16,8 +16,6 @@ import {
 import { useTheme } from "@/hooks";
 import type { CreateCourseScheduleSlot, Weekday } from "@/types";
 
-const TR_DAY_LABELS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
-
 type Props = {
   slots: CreateCourseScheduleSlot[];
   onChange: (slots: CreateCourseScheduleSlot[]) => void;
@@ -127,7 +125,7 @@ export function CourseScheduleEditor({ slots, onChange, disabled, layoutWidth }:
         accessibilityRole="button"
       >
         <MaterialIcons name="add-circle-outline" size={24} color={colors.highlight} />
-        <Text style={[typography.caption, { color: colors.highlight }]}>Slot ekle</Text>
+        <Text style={[typography.caption, { color: colors.highlight }]}>Add slot</Text>
       </Pressable>
 
       {slots.length > 0 ? (
@@ -135,7 +133,7 @@ export function CourseScheduleEditor({ slots, onChange, disabled, layoutWidth }:
           {slots.map((s) => (
             <View key={s.id} style={[styles.slotRow, { borderColor: colors.border }]}>
               <Text style={[typography.caption, { color: colors.textSecondary, flex: 1 }]}>
-                {TR_DAY_LABELS[s.weekday - 1]} {formatMinutesAsTime(s.startMinutes)}–
+                {WEEK_DAY_LABELS[s.weekday - 1]} {formatMinutesAsTime(s.startMinutes)}–
                 {formatMinutesAsTime(s.endMinutes)}
                 {s.location ? ` · ${s.location}` : ""}
               </Text>
@@ -166,7 +164,7 @@ export function CourseScheduleEditor({ slots, onChange, disabled, layoutWidth }:
           ]}
         >
           <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: "600" }]}>
-            {editingId ? "Slotu düzenle" : "Yeni slot"}
+            {editingId ? "Edit slot" : "New slot"}
           </Text>
 
           <View style={styles.weekdayRow}>
@@ -197,7 +195,7 @@ export function CourseScheduleEditor({ slots, onChange, disabled, layoutWidth }:
                       },
                     ]}
                   >
-                    {TR_DAY_LABELS[idx]}
+                    {WEEK_DAY_LABELS[idx]}
                   </Text>
                 </Pressable>
               );
@@ -206,7 +204,7 @@ export function CourseScheduleEditor({ slots, onChange, disabled, layoutWidth }:
 
           <View style={styles.timeRow}>
             <View style={{ flex: 1, gap: 4 }}>
-              <Text style={[typography.caption, { color: colors.textMuted }]}>Başlangıç</Text>
+              <Text style={[typography.caption, { color: colors.textMuted }]}>Start</Text>
               <TextInput
                 value={form.startInput}
                 onChangeText={(t) => setForm((f) => ({ ...f, startInput: t }))}
@@ -218,7 +216,7 @@ export function CourseScheduleEditor({ slots, onChange, disabled, layoutWidth }:
               />
             </View>
             <View style={{ flex: 1, gap: 4 }}>
-              <Text style={[typography.caption, { color: colors.textMuted }]}>Bitiş</Text>
+              <Text style={[typography.caption, { color: colors.textMuted }]}>End</Text>
               <TextInput
                 value={form.endInput}
                 onChangeText={(t) => setForm((f) => ({ ...f, endInput: t }))}
@@ -234,7 +232,7 @@ export function CourseScheduleEditor({ slots, onChange, disabled, layoutWidth }:
           <TextInput
             value={form.location}
             onChangeText={(t) => setForm((f) => ({ ...f, location: t }))}
-            placeholder="Konum (isteğe bağlı)"
+            placeholder="Location (optional)"
             placeholderTextColor={colors.textMuted}
             editable={!disabled}
             style={[styles.timeInput, typography.body, { color: colors.textPrimary, borderColor: colors.border }]}
@@ -242,13 +240,13 @@ export function CourseScheduleEditor({ slots, onChange, disabled, layoutWidth }:
 
           {!formValid ? (
             <Text style={[typography.caption, { color: colors.warning }]}>
-              Geçerli saat aralığı girin (ör. 09:00 – 10:30).
+              Enter a valid time range (e.g. 09:00 – 10:30).
             </Text>
           ) : null}
 
           <View style={styles.formActions}>
             <Pressable onPress={closeForm} hitSlop={8}>
-              <Text style={[typography.caption, { color: colors.textMuted }]}>İptal</Text>
+              <Text style={[typography.caption, { color: colors.textMuted }]}>Cancel</Text>
             </Pressable>
             <Pressable
               onPress={saveSlot}
@@ -256,7 +254,7 @@ export function CourseScheduleEditor({ slots, onChange, disabled, layoutWidth }:
               style={[styles.saveChip, { opacity: !formValid || disabled ? 0.45 : 1 }]}
             >
               <Text style={[typography.caption, { color: colors.primaryDark, fontWeight: "700" }]}>
-                Kaydet
+                Save
               </Text>
             </Pressable>
           </View>
