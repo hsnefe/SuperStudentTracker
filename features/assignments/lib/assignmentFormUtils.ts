@@ -41,6 +41,25 @@ export function priorityLabel(priority: AssignmentPriority): string {
   return ASSIGNMENT_PRIORITY_OPTIONS.find((o) => o.value === priority)?.label ?? priority;
 }
 
+const PRIORITY_ORDER: AssignmentPriority[] = ["low", "medium", "high", "emergent"];
+
+const PRIORITY_DOT_COLORS: Record<AssignmentPriority, string> = {
+  low: "#22c55e",
+  medium: "#eab308",
+  high: "#f97316",
+  emergent: "#ef4444",
+};
+
+export function priorityDotColor(priority: AssignmentPriority): string {
+  return PRIORITY_DOT_COLORS[priority];
+}
+
+export function cyclePriority(priority: AssignmentPriority): AssignmentPriority {
+  const i = PRIORITY_ORDER.indexOf(priority);
+  if (i < 0) return "low";
+  return PRIORITY_ORDER[(i + 1) % PRIORITY_ORDER.length];
+}
+
 export function statusLabel(status: AssignmentStatus): string {
   return ASSIGNMENT_STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status;
 }

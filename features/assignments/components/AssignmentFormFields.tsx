@@ -1,4 +1,6 @@
 import { StyleSheet, Text, TextInput, View } from "react-native";
+import type { AssignmentStripCardVariant } from "@/components/course/AssignmentStripCardBackground";
+import { stripCardMetaColor } from "@/components/course/assignmentStripCardTypography";
 import { AssignmentDateField } from "@/components/form/AssignmentDateField";
 import { FormSelect } from "@/components/form/FormSelect";
 import {
@@ -19,6 +21,8 @@ import { useTheme } from "@/hooks";
 
 type Props = {
   mode: "view" | "edit";
+  fields?: "all" | "secondary";
+  variant?: AssignmentStripCardVariant;
   values: AssignmentFormValues;
   defaultCourseId: string;
   disabled?: boolean;
@@ -30,8 +34,25 @@ type Props = {
   onChangeStatus?: (status: AssignmentFormValues["status"]) => void;
 };
 
-function ViewField({ label, value }: { label: string; value: string }) {
+function ViewField({
+  label,
+  value,
+  contentOnly,
+  contentColor,
+}: {
+  label: string;
+  value: string;
+  contentOnly?: boolean;
+  contentColor?: string;
+}) {
   const { colors, spacing, typography } = useTheme();
+  if (contentOnly) {
+    return (
+      <Text style={[typography.body, styles.contentOnly, { color: contentColor }]}>
+        {value}
+      </Text>
+    );
+  }
   return (
     <View style={{ gap: spacing.xs }}>
       <Text style={[typography.caption, styles.label, { color: colors.textSecondary }]}>{label}</Text>
@@ -42,6 +63,8 @@ function ViewField({ label, value }: { label: string; value: string }) {
 
 export function AssignmentFormFields({
   mode,
+  fields = "all",
+  variant = 0,
   values,
   defaultCourseId,
   disabled,
@@ -54,12 +77,35 @@ export function AssignmentFormFields({
 }: Props) {
   const { colors, spacing, typography, radius } = useTheme();
   const courseOptions = useAssignmentCourseOptions(defaultCourseId);
+  const metaColor = stripCardMetaColor(variant);
 
   const inputStyle = [
     styles.input,
     typography.body,
     { color: colors.textPrimary, borderColor: colors.border, borderRadius: radius.md },
   ];
+
+  if (fields === "secondary") {
+    if (mode === "view") {
+      return (
+        <ViewField
+          label="Deadline"
+          value={formatDeadlineDisplay(values.deadline)}
+          contentOnly
+          contentColor={metaColor}
+        />
+      );
+    }
+
+    return (
+      <AssignmentDateField
+        label="Deadline"
+        value={values.deadline}
+        onChange={(v) => onChangeDeadline?.(v)}
+        disabled={disabled}
+      />
+    );
+  }
 
   if (mode === "view") {
     return (
@@ -140,6 +186,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.4,
+  },
+  contentOnly: {
+    fontSize: 15,
+    fontWeight: "600",
   },
   input: {
     borderWidth: 1,

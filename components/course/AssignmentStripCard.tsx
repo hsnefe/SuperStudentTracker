@@ -1,21 +1,29 @@
 import type { Href } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import {
+  AssignmentStripCardBackground,
+  STRIP_CARD_RADIUS,
+  type AssignmentStripCardVariant,
+} from "@/components/course/AssignmentStripCardBackground";
+import { stripCardMetaColor } from "@/components/course/assignmentStripCardTypography";
 import { GlassInteractionSurface } from "@/components/course/GlassInteractionSurface";
+import { AssignmentPriorityBadge } from "@/features/assignments/components/AssignmentPriorityBadge";
 import { useExpandNavigation } from "@/hooks";
-import type { Assignment } from "@/types";
+import type { Assignment, AssignmentPriority } from "@/types";
 
 const ORANGE = "#FF653F";
-const CARD_RADIUS = 16;
+const CARD_RADIUS = STRIP_CARD_RADIUS;
 
 type Props = {
-  variant: 0 | 1 | 2 | 3;
+  variant: AssignmentStripCardVariant;
   indexLabel: string;
   assignment: Assignment;
   href: Href;
   width: number;
   height: number;
+  priorityDisabled?: boolean;
+  onPriorityCycle?: (next: AssignmentPriority) => void;
 };
 
 export function AssignmentStripCard({
@@ -25,19 +33,34 @@ export function AssignmentStripCard({
   href,
   width,
   height,
+  priorityDisabled,
+  onPriorityCycle,
 }: Props) {
   const rootRef = useRef<View>(null);
   const { pushExpand } = useExpandNavigation();
+  const metaColor = stripCardMetaColor(variant);
+
   const inner = (
     <>
-      <Text
-        style={[
-          styles.num,
-          variant === 1 ? styles.numLight : variant === 3 ? styles.numLight : styles.numAccent,
-        ]}
-      >
-        {indexLabel}
-      </Text>
+      <View style={styles.numRow}>
+        <Text
+          style={[
+            styles.num,
+            variant === 1 ? styles.numLight : variant === 3 ? styles.numLight : styles.numAccent,
+          ]}
+        >
+          {indexLabel}
+        </Text>
+        {onPriorityCycle ? (
+          <AssignmentPriorityBadge
+            compact
+            priority={assignment.priority}
+            labelColor={metaColor}
+            disabled={priorityDisabled}
+            onCycle={onPriorityCycle}
+          />
+        ) : null}
+      </View>
       <Text style={[styles.cardTitle, variant === 1 && styles.textLight]} numberOfLines={2}>
         {assignment.title}
       </Text>
@@ -52,26 +75,6 @@ export function AssignmentStripCard({
 
   const faceSize = { width, height };
 
-  const background =
-    variant === 1 ? (
-      <LinearGradient
-        colors={["rgba(255,101,63,0.45)", "rgba(230,87,21,0.35)", "rgba(184,50,8,0.3)"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.faceFill, faceSize]}
-      />
-    ) : (
-      <View
-        style={[
-          styles.faceFill,
-          faceSize,
-          variant === 0 && styles.glassA,
-          variant === 2 && styles.glassB,
-          variant === 3 && styles.glassC,
-        ]}
-      />
-    );
-
   return (
     <View ref={rootRef} collapsable={false} style={faceSize}>
       <GlassInteractionSurface
@@ -80,7 +83,9 @@ export function AssignmentStripCard({
         enableScale
         onPress={() => pushExpand(href, rootRef)}
         style={faceSize}
-        background={background}
+        background={
+          <AssignmentStripCardBackground variant={variant} style={faceSize} borderRadius={CARD_RADIUS} />
+        }
         accessibilityLabel={assignment.title}
       >
         <View style={[styles.facePad, faceSize]}>{inner}</View>
@@ -90,21 +95,15 @@ export function AssignmentStripCard({
 }
 
 const styles = StyleSheet.create({
-  faceFill: {
-    borderRadius: CARD_RADIUS,
-  },
   facePad: {
     padding: 12,
     justifyContent: "space-between",
   },
-  glassA: {
-    backgroundColor: "rgba(255,255,255,0.14)",
-  },
-  glassB: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-  },
-  glassC: {
-    backgroundColor: "rgba(20,12,40,0.42)",
+  numRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 6,
   },
   num: {
     fontSize: 18,

@@ -13,6 +13,7 @@ import { useCourseDetailTabs, useTheme } from "@/hooks";
 import { AttendanceDetailModal } from "@/features/attendance";
 import { CreateAssignmentModal } from "@/features/assignments/components/CreateAssignmentModal";
 import { useCreateAssignment } from "@/features/assignments/hooks/useCreateAssignment";
+import { useUpdateAssignment } from "@/features/assignments/hooks/useUpdateAssignment";
 import { EditCourseModal } from "@/features/courses/components/EditCourseModal";
 import { fetchCourseForEdit } from "@/features/courses/api/fetchCourseForEdit";
 import { useCourseForEdit } from "@/features/courses/hooks/useCourseForEdit";
@@ -30,6 +31,7 @@ import { loadAssignments } from "@/lib/persistence/courseAssignments";
 import type { TransitionOriginRect } from "@/store/navigationTransitionStore";
 import type {
   Assignment,
+  AssignmentPriority,
   CourseAbsenceRecord,
   CreateAssignmentInput,
   ScheduleSlot,
@@ -56,6 +58,7 @@ export default function CourseDetailScreen() {
   const [attendanceModalVisible, setAttendanceModalVisible] = useState(false);
   const [expandOrigin, setExpandOrigin] = useState<TransitionOriginRect | null>(null);
   const createAssignment = useCreateAssignment();
+  const updateAssignment = useUpdateAssignment();
   const updateCourse = useUpdateCourse();
   const deleteCourse = useDeleteCourse();
   const courseForEdit = useCourseForEdit(id, editModalVisible);
@@ -126,6 +129,33 @@ export default function CourseDetailScreen() {
       setCreateModalVisible(false);
     }
   };
+
+  const handlePriorityChange = useCallback(
+    (assignment: Assignment, nextPriority: AssignmentPriority) => {
+      updateAssignment.mutate(
+        {
+          routeCourseId: id,
+          assignmentId: assignment.id,
+          input: {
+            title: assignment.title,
+            type: assignment.type,
+            courseId: assignment.courseId,
+            deadline: assignment.deadline,
+            priority: nextPriority,
+            status: assignment.status,
+          },
+        },
+        {
+          onSuccess: (updated) => {
+            setAssignments((prev) =>
+              prev.map((a) => (a.id === updated.id ? updated : a)),
+            );
+          },
+        },
+      );
+    },
+    [id, updateAssignment],
+  );
 
   const absenceCount = absenceRecords.length;
   const percentLabel = formatPercentLabel(absenceCount, absenceToleranceHours);
@@ -231,6 +261,8 @@ export default function CourseDetailScreen() {
             assignments={assignments}
             loading={assignmentsLoading}
             onAddPress={() => setCreateModalVisible(true)}
+            priorityBusy={updateAssignment.isPending}
+            onPriorityChange={handlePriorityChange}
             style={{
               flex: 1,
               minHeight: courseAssignmentsMinHeightPx(windowHeight),

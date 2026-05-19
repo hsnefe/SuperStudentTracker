@@ -17,7 +17,7 @@ import {
   courseBlurMaxIntensity,
 } from "@/constants/courseDetailVisual";
 import { useTheme } from "@/hooks";
-import type { Assignment } from "@/types";
+import type { Assignment, AssignmentPriority } from "@/types";
 
 const CARD_W = 168;
 const CARD_H = 132;
@@ -28,6 +28,8 @@ type Props = {
   assignments: Assignment[];
   loading: boolean;
   onAddPress: () => void;
+  priorityBusy?: boolean;
+  onPriorityChange?: (assignment: Assignment, nextPriority: AssignmentPriority) => void;
   /** Grows to fill scroll area below hero (e.g. `{ flex: 1 }`). */
   style?: StyleProp<ViewStyle>;
 };
@@ -38,6 +40,8 @@ export function CourseAssignmentsBlurSection({
   assignments,
   loading,
   onAddPress,
+  priorityBusy,
+  onPriorityChange,
   style,
 }: Props) {
   const { typography, spacing } = useTheme();
@@ -120,12 +124,19 @@ export function CourseAssignmentsBlurSection({
                 assignment={a}
                 width={CARD_W}
                 height={CARD_H}
+                priorityDisabled={priorityBusy}
+                onPriorityCycle={
+                  onPriorityChange
+                    ? (next) => onPriorityChange(a, next)
+                    : undefined
+                }
                 href={{
                   pathname: "/course/[id]/assignment/[assignmentId]",
                   params: {
                     id: courseId,
                     assignmentId: a.id,
                     courseTitle,
+                    cardVariant: String(i % 4),
                   },
                 }}
               />

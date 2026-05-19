@@ -17,6 +17,7 @@ type Props<T extends string = string> = {
   options: SelectOption<T>[];
   onChange: (value: T) => void;
   disabled?: boolean;
+  hideLabel?: boolean;
 };
 
 export function FormSelect<T extends string>({
@@ -25,6 +26,7 @@ export function FormSelect<T extends string>({
   options,
   onChange,
   disabled,
+  hideLabel,
 }: Props<T>) {
   const { colors, typography, radius, spacing } = useTheme();
   const [open, setOpen] = useState(false);
@@ -33,7 +35,9 @@ export function FormSelect<T extends string>({
 
   return (
     <View style={{ gap: spacing.xs }}>
-      <Text style={[typography.caption, styles.label, { color: colors.textSecondary }]}>{label}</Text>
+      {hideLabel ? null : (
+        <Text style={[typography.caption, styles.label, { color: colors.textSecondary }]}>{label}</Text>
+      )}
       <Pressable
         onPress={() => !disabled && setOpen(true)}
         disabled={disabled}
