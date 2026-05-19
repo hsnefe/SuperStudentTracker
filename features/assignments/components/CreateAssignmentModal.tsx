@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -8,34 +8,21 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
   useWindowDimensions,
 } from "react-native";
-import { AssignmentDateField } from "@/components/form/AssignmentDateField";
-import { FormSelect } from "@/components/form/FormSelect";
+import { AssignmentFormFields } from "@/features/assignments/components/AssignmentFormFields";
 import {
-  ASSIGNMENT_PRIORITY_OPTIONS,
-  ASSIGNMENT_STATUS_OPTIONS,
-  ASSIGNMENT_TYPE_OPTIONS,
+  todayIsoDate,
+  type AssignmentFormValues,
+} from "@/features/assignments/lib/assignmentFormUtils";
+import {
   DEFAULT_ASSIGNMENT_PRIORITY,
   DEFAULT_ASSIGNMENT_STATUS,
   DEFAULT_ASSIGNMENT_TYPE,
-  NO_COURSE_OPTION,
-  type SelectOption,
 } from "@/constants/assignmentOptions";
-import { MOCK_COURSES_FALLBACK } from "@/constants/coursesMock";
-import { useCoursesGridData } from "@/features/courses/hooks/useCoursesGridData";
 import { useTheme } from "@/hooks";
 import type { CreateAssignmentInput } from "@/types";
-
-function todayIsoDate(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
 
 type Props = {
   visible: boolean;
@@ -48,6 +35,15 @@ type Props = {
 const MODAL_BASE_MAX_WIDTH = 520;
 const MODAL_MAX_WIDTH = MODAL_BASE_MAX_WIDTH * 3;
 
+const EMPTY_FORM: AssignmentFormValues = {
+  title: "",
+  type: DEFAULT_ASSIGNMENT_TYPE,
+  courseId: "",
+  deadline: "",
+  priority: DEFAULT_ASSIGNMENT_PRIORITY,
+  status: DEFAULT_ASSIGNMENT_STATUS,
+};
+
 export function CreateAssignmentModal({
   visible,
   busy,
@@ -57,71 +53,50 @@ export function CreateAssignmentModal({
 }: Props) {
   const { width: screenW, height: screenH } = useWindowDimensions();
   const { colors, spacing, typography, radius } = useTheme();
-  const coursesQuery = useCoursesGridData();
 
   const modalWidth = Math.min(screenW - 32, MODAL_MAX_WIDTH);
   const modalMaxHeight = Math.min(screenH * 0.88, 720);
 
-  const [title, setTitle] = useState("");
-  const [type, setType] = useState(DEFAULT_ASSIGNMENT_TYPE);
-  const [courseId, setCourseId] = useState(defaultCourseId);
-  const [deadline, setDeadline] = useState(() => todayIsoDate());
-  const [priority, setPriority] = useState(DEFAULT_ASSIGNMENT_PRIORITY);
-  const [status, setStatus] = useState(DEFAULT_ASSIGNMENT_STATUS);
+  const [values, setValues] = useState<AssignmentFormValues>({
+    ...EMPTY_FORM,
+    courseId: defaultCourseId,
+    deadline: todayIsoDate(),
+  });
 
   const resetForm = useCallback(() => {
-    setTitle("");
-    setType(DEFAULT_ASSIGNMENT_TYPE);
-    setCourseId(defaultCourseId);
-    setDeadline(todayIsoDate());
-    setPriority(DEFAULT_ASSIGNMENT_PRIORITY);
-    setStatus(DEFAULT_ASSIGNMENT_STATUS);
+    setValues({
+      ...EMPTY_FORM,
+      courseId: defaultCourseId,
+      deadline: todayIsoDate(),
+    });
   }, [defaultCourseId]);
 
   useEffect(() => {
     if (visible) {
-      setCourseId(defaultCourseId);
+      setValues((prev) => ({ ...prev, courseId: defaultCourseId }));
     } else {
       resetForm();
     }
   }, [visible, defaultCourseId, resetForm]);
 
-  const courseOptions = useMemo((): SelectOption[] => {
-    const base = coursesQuery.isSuccess
-      ? (coursesQuery.data ?? [])
-      : coursesQuery.isError
-        ? MOCK_COURSES_FALLBACK
-        : [];
-    const fromGrid = base.map((c) => ({ value: c.id, label: c.title }));
-    const hasDefault = fromGrid.some((o) => o.value === defaultCourseId);
-    const merged = hasDefault
-      ? fromGrid
-      : defaultCourseId
-        ? [{ value: defaultCourseId, label: "Current course" }, ...fromGrid]
-        : fromGrid;
-    return [NO_COURSE_OPTION, ...merged];
-  }, [coursesQuery.data, coursesQuery.isError, coursesQuery.isSuccess, defaultCourseId]);
-
-  const titleValid = title.trim().length > 0;
+  const titleValid = values.title.trim().length > 0;
   const canSubmit = titleValid && !busy;
 
   const handleSubmit = useCallback(() => {
     if (!canSubmit) return;
     onSubmit({
-      title: title.trim(),
-      type,
-      courseId,
-      deadline,
-      priority,
-      status,
+      title: values.title.trim(),
+      type: values.type,
+      courseId: values.courseId,
+      deadline: values.deadline,
+      priority: values.priority,
+      status: values.status,
     });
-  }, [canSubmit, courseId, deadline, onSubmit, priority, status, title, type]);
+  }, [canSubmit, onSubmit, values]);
 
-  const inputStyle = [
-    styles.input,
-    typography.body,
-    { color: colors.textPrimary, borderColor: colors.border, borderRadius: radius.md },
-  ];
+  const patch = useCallback((patchValues: Partial<AssignmentFormValues>) => {
+    setValues((prev) => ({ ...prev, ...patchValues }));
+  }, []);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -152,57 +127,17 @@ export function CreateAssignmentModal({
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator
             >
-              <View style={{ gap: spacing.xs }}>
-                <Text style={[typography.caption, styles.label, { color: colors.textSecondary }]}>
-                  Assignment name
-                </Text>
-                <TextInput
-                  value={title}
-                  onChangeText={setTitle}
-                  placeholder="e.g. Final essay"
-                  placeholderTextColor={colors.textMuted}
-                  editable={!busy}
-                  style={inputStyle}
-                />
-              </View>
-
-              <FormSelect
-                label="Assignment type"
-                value={type}
-                options={ASSIGNMENT_TYPE_OPTIONS}
-                onChange={setType}
+              <AssignmentFormFields
+                mode="edit"
+                values={values}
+                defaultCourseId={defaultCourseId}
                 disabled={busy}
-              />
-
-              <FormSelect
-                label="Course"
-                value={courseId}
-                options={courseOptions}
-                onChange={setCourseId}
-                disabled={busy}
-              />
-
-              <AssignmentDateField
-                label="Deadline"
-                value={deadline}
-                onChange={setDeadline}
-                disabled={busy}
-              />
-
-              <FormSelect
-                label="Importance"
-                value={priority}
-                options={ASSIGNMENT_PRIORITY_OPTIONS}
-                onChange={setPriority}
-                disabled={busy}
-              />
-
-              <FormSelect
-                label="Status"
-                value={status}
-                options={ASSIGNMENT_STATUS_OPTIONS}
-                onChange={setStatus}
-                disabled={busy}
+                onChangeTitle={(title) => patch({ title })}
+                onChangeType={(type) => patch({ type })}
+                onChangeCourseId={(courseId) => patch({ courseId })}
+                onChangeDeadline={(deadline) => patch({ deadline })}
+                onChangePriority={(priority) => patch({ priority })}
+                onChangeStatus={(status) => patch({ status })}
               />
             </ScrollView>
           </KeyboardAvoidingView>
@@ -260,16 +195,6 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flexGrow: 0,
-  },
-  label: {
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-  input: {
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
   },
   actions: {
     flexDirection: "row",
