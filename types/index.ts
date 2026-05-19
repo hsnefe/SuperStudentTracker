@@ -142,6 +142,7 @@ export type NoteBlock = {
 };
 
 export type CourseMaterialKind =
+  | "folder"
   | "pdf"
   | "slides"
   | "link"
@@ -160,6 +161,8 @@ export type CourseMaterial = {
   mimeType?: string;
   sizeBytes?: number;
   storagePath?: string;
+  /** User folder parent; omitted or null = course root. */
+  parentFolderId?: string | null;
 };
 
 export type CreateMaterialInput = {
@@ -172,4 +175,7 @@ export type CreateMaterialInput = {
   fileName?: string;
   mimeType?: string;
   sizeBytes?: number;
+  parentFolderId?: string | null;
+  /** Create an empty user folder (no file or link). */
+  createAsFolder?: boolean;
 };

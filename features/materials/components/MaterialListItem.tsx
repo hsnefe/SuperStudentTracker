@@ -5,7 +5,7 @@ import { useTheme } from "@/hooks";
 import type { CourseMaterial } from "@/types";
 import { formatMaterialDate, formatMaterialSize } from "../lib/materialFormat";
 import { materialKindIcon } from "../lib/materialIcons";
-import { MATERIAL_FOLDER_LABELS } from "../lib/materialOptions";
+import { MATERIAL_KIND_LABELS } from "../lib/materialOptions";
 
 type Props = {
   material: CourseMaterial;
@@ -62,7 +62,7 @@ export function MaterialListItem({ material, onLongPress, compact }: Props) {
         {!compact ? (
           <View style={styles.metaRow}>
             <Text style={[typography.caption, { color: colors.textMuted }]}>
-              {MATERIAL_FOLDER_LABELS[material.kind]}
+              {material.kind !== "folder" ? MATERIAL_KIND_LABELS[material.kind] : ""}
             </Text>
             {sizeLabel ? (
               <Text style={[typography.caption, { color: colors.textMuted }]}>{sizeLabel}</Text>

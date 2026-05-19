@@ -6,7 +6,7 @@ export function applyMaterialFilterSort(
   filter: MaterialFilterValue,
   sort: MaterialSortValue,
 ): CourseMaterial[] {
-  let list = materials;
+  let list = materials.filter((m) => m.kind !== "folder");
   if (filter !== "all") {
     list = list.filter((m) => m.kind === filter);
   }

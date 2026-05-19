@@ -5,6 +5,7 @@ import type { CourseMaterialKind } from "@/types";
 type IconName = ComponentProps<typeof MaterialIcons>["name"];
 
 const KIND_ICONS: Record<CourseMaterialKind, IconName> = {
+  folder: "folder",
   pdf: "picture-as-pdf",
   slides: "slideshow",
   link: "link",

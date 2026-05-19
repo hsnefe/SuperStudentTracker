@@ -3,7 +3,7 @@
  */
 import { Platform } from "react-native";
 import { getDoc, setDoc } from "firebase/firestore";
-import { normalizeMaterials } from "@/lib/materialNormalize";
+import { normalizeMaterials, serializeMaterialsForFirestore } from "@/lib/materialNormalize";
 import { readCache, writeCache } from "@/lib/sqliteCache";
 import { userCourseMaterialDoc } from "@/lib/firestore/userPaths";
 import { getFirebaseFirestore, isFirebaseConfigured } from "@/lib/firebase";
@@ -16,6 +16,14 @@ function cacheKey(uid: string, courseId: string): string {
   return `${CACHE_PREFIX}${uid}:${courseId}`;
 }
 
+function writeLocalCache(uid: string, courseId: string, materials: CourseMaterial[]): void {
+  const key = cacheKey(uid, courseId);
+  writeCache(key, materials);
+  if (Platform.OS === "web") {
+    getMaterialsMemory().set(key, materials);
+  }
+}
+
 export async function loadMaterials(uid: string, courseId: string): Promise<CourseMaterial[]> {
   if (isFirebaseConfigured) {
     try {
@@ -24,10 +32,14 @@ export async function loadMaterials(uid: string, courseId: string): Promise<Cour
       const raw = snap.data()?.materials;
       if (raw != null) {
         const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-        if (Array.isArray(parsed)) return normalizeMaterials(parsed);
+        if (Array.isArray(parsed)) {
+          const normalized = normalizeMaterials(parsed);
+          writeLocalCache(uid, courseId, normalized);
+          return normalized;
+        }
       }
-    } catch {
-      /* fall through */
+    } catch (err) {
+      console.warn("[courseMaterials] Firestore load failed, using cache", err);
     }
   }
 
@@ -47,22 +59,21 @@ export async function saveMaterials(
   courseId: string,
   materials: CourseMaterial[],
 ): Promise<void> {
+  const normalized = normalizeMaterials(materials);
+
   if (isFirebaseConfigured) {
+    const db = getFirebaseFirestore();
     try {
-      const db = getFirebaseFirestore();
       await setDoc(userCourseMaterialDoc(db, uid, courseId), {
-        materials,
+        materials: serializeMaterialsForFirestore(normalized),
         updatedAt: new Date().toISOString(),
       });
-      return;
-    } catch {
-      /* fall through */
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to save materials to Firestore";
+      throw new Error(message);
     }
   }
 
-  const key = cacheKey(uid, courseId);
-  writeCache(key, materials);
-  if (Platform.OS === "web") {
-    getMaterialsMemory().set(key, materials);
-  }
+  writeLocalCache(uid, courseId, normalized);
 }

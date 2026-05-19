@@ -1,7 +1,10 @@
 import type { SelectOption } from "@/constants/assignmentOptions";
 import type { CourseMaterialKind } from "@/types";
 
-export type MaterialFilterValue = "all" | CourseMaterialKind;
+/** File kinds only — user folders are not filter targets. */
+export type MaterialFileKind = Exclude<CourseMaterialKind, "folder">;
+
+export type MaterialFilterValue = "all" | MaterialFileKind;
 
 export type MaterialSortValue = "date_desc" | "date_asc" | "name_asc" | "name_desc";
 
@@ -22,7 +25,7 @@ export const MATERIAL_SORT_OPTIONS: SelectOption<MaterialSortValue>[] = [
   { value: "name_desc", label: "Name (Z–A)" },
 ];
 
-export const MATERIAL_FOLDER_LABELS: Record<CourseMaterialKind, string> = {
+export const MATERIAL_KIND_LABELS: Record<MaterialFileKind, string> = {
   pdf: "PDF",
   slides: "Slides",
   image: "Images",

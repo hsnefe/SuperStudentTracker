@@ -1,6 +1,7 @@
 import { newMaterialId } from "@/lib/materialNormalize";
 import { loadMaterials, saveMaterials } from "@/lib/persistence/courseMaterials";
 import type { CourseMaterial, CourseMaterialKind, CreateMaterialInput } from "@/types";
+import { validateParentFolder } from "../lib/folderHelpers";
 import { inferMaterialKind } from "../lib/inferMaterialKind";
 import { uploadCourseMaterial } from "./uploadCourseMaterial";
 import { isFirebaseConfigured } from "@/lib/firebase";
@@ -12,6 +13,23 @@ export async function createMaterial(
   const materialId = newMaterialId();
   const title = input.title.trim();
   const createdAt = new Date().toISOString();
+  const existing = await loadMaterials(uid, input.courseId);
+  const parentFolderId = input.parentFolderId ?? null;
+  validateParentFolder(existing, parentFolderId);
+
+  if (input.createAsFolder === true) {
+    const material: CourseMaterial = {
+      id: materialId,
+      courseId: input.courseId,
+      title,
+      kind: "folder",
+      uri: "folder://",
+      createdAt,
+      parentFolderId,
+    };
+    await saveMaterials(uid, input.courseId, [...existing, material]);
+    return material;
+  }
 
   let uri = input.uri?.trim() ?? "";
   let storagePath: string | undefined;
@@ -53,9 +71,9 @@ export async function createMaterial(
     mimeType,
     sizeBytes,
     storagePath,
+    parentFolderId,
   };
 
-  const existing = await loadMaterials(uid, input.courseId);
   await saveMaterials(uid, input.courseId, [...existing, material]);
   return material;
 }

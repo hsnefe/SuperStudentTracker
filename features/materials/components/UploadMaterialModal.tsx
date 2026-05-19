@@ -1,6 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as DocumentPicker from "expo-document-picker";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -15,21 +15,36 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useTheme } from "@/hooks";
-import type { CreateMaterialInput } from "@/types";
+import type { CourseMaterial, CreateMaterialInput } from "@/types";
+import {
+  buildFolderPickerOptions,
+  findMaterial,
+  type FolderPickerOption,
+} from "../lib/folderHelpers";
 
-type UploadMode = "file" | "link";
+type UploadMode = "file" | "link" | "folder";
 
 type Props = {
   visible: boolean;
   busy: boolean;
   courseId: string;
+  materials: CourseMaterial[];
+  defaultParentFolderId?: string | null;
   onClose: () => void;
-  onSubmit: (input: CreateMaterialInput) => void;
+  onSubmit: (input: CreateMaterialInput) => void | Promise<void>;
 };
 
 const MODAL_BASE_MAX_WIDTH = 520;
 
-export function UploadMaterialModal({ visible, busy, courseId, onClose, onSubmit }: Props) {
+export function UploadMaterialModal({
+  visible,
+  busy,
+  courseId,
+  materials,
+  defaultParentFolderId,
+  onClose,
+  onSubmit,
+}: Props) {
   const { width: screenW, height: screenH } = useWindowDimensions();
   const { colors, spacing, typography, radius } = useTheme();
 
@@ -39,6 +54,11 @@ export function UploadMaterialModal({ visible, busy, courseId, onClose, onSubmit
   const [mode, setMode] = useState<UploadMode>("file");
   const [title, setTitle] = useState("");
   const [linkUri, setLinkUri] = useState("");
+  const [parentFolderId, setParentFolderId] = useState<string | null>(
+    () => defaultParentFolderId ?? null,
+  );
+  const wasVisibleRef = useRef(false);
+  const [folderPickerOpen, setFolderPickerOpen] = useState(false);
   const [pickedFile, setPickedFile] = useState<{
     uri: string;
     name: string;
@@ -46,16 +66,31 @@ export function UploadMaterialModal({ visible, busy, courseId, onClose, onSubmit
     size?: number;
   } | null>(null);
 
+  const folderOptions = useMemo(() => buildFolderPickerOptions(materials), [materials]);
+
   const reset = useCallback(() => {
     setMode("file");
     setTitle("");
     setLinkUri("");
     setPickedFile(null);
-  }, []);
+    setParentFolderId(defaultParentFolderId ?? null);
+    setFolderPickerOpen(false);
+  }, [defaultParentFolderId]);
 
   useEffect(() => {
-    if (!visible) reset();
-  }, [visible, reset]);
+    if (!visible) {
+      wasVisibleRef.current = false;
+      reset();
+      return;
+    }
+    if (!wasVisibleRef.current) {
+      setMode("file");
+      setParentFolderId(defaultParentFolderId ?? null);
+      wasVisibleRef.current = true;
+    }
+  }, [visible, defaultParentFolderId, reset]);
+
+  const lockedParent = defaultParentFolderId != null && defaultParentFolderId !== "";
 
   const pickFile = async () => {
     const result = await DocumentPicker.getDocumentAsync({
@@ -77,28 +112,92 @@ export function UploadMaterialModal({ visible, busy, courseId, onClose, onSubmit
   };
 
   const titleValid = title.trim().length > 0;
-  const fileValid = mode === "file" ? pickedFile != null : linkUri.trim().length > 0;
+  const fileValid =
+    mode === "folder" ? true : mode === "file" ? pickedFile != null : linkUri.trim().length > 0;
   const canSubmit = titleValid && fileValid && !busy;
+
+  const resolvedParentId = parentFolderId ?? defaultParentFolderId ?? null;
+
+  const selectedFolderLabel = useMemo(() => {
+    if (resolvedParentId == null) return "Unassigned (root)";
+    return (
+      folderOptions.find((o) => o.id === resolvedParentId)?.label ??
+      findMaterial(materials, resolvedParentId)?.title ??
+      "Selected folder"
+    );
+  }, [resolvedParentId, folderOptions, materials]);
 
   const handleSubmit = () => {
     if (!canSubmit) return;
+    const parent = resolvedParentId;
+
+    if (mode === "folder") {
+      void Promise.resolve(
+        onSubmit({
+          courseId,
+          title: title.trim(),
+          createAsFolder: true,
+          parentFolderId: parent,
+        }),
+      );
+      return;
+    }
+
     if (mode === "link") {
+      void Promise.resolve(
+        onSubmit({
+          courseId,
+          title: title.trim(),
+          uri: linkUri.trim(),
+          parentFolderId: parent,
+        }),
+      );
+      return;
+    }
+
+    if (!pickedFile) return;
+    void Promise.resolve(
       onSubmit({
         courseId,
         title: title.trim(),
-        uri: linkUri.trim(),
-      });
-      return;
-    }
-    if (!pickedFile) return;
-    onSubmit({
-      courseId,
-      title: title.trim(),
-      localFileUri: pickedFile.uri,
-      fileName: pickedFile.name,
-      mimeType: pickedFile.mimeType,
-      sizeBytes: pickedFile.size,
-    });
+        localFileUri: pickedFile.uri,
+        fileName: pickedFile.name,
+        mimeType: pickedFile.mimeType,
+        sizeBytes: pickedFile.size,
+        parentFolderId: parent,
+      }),
+    );
+  };
+
+  const renderFolderOption = (option: FolderPickerOption) => {
+    const active = parentFolderId === option.id;
+    return (
+      <Pressable
+        key={option.id ?? "root"}
+        onPress={() => {
+          setParentFolderId(option.id);
+          setFolderPickerOpen(false);
+        }}
+        style={[
+          styles.folderOption,
+          {
+            paddingLeft: spacing.md + option.depth * spacing.md,
+            backgroundColor: active ? "rgba(255,101,63,0.12)" : "transparent",
+            borderRadius: radius.sm,
+          },
+        ]}
+      >
+        <Text
+          style={[
+            typography.body,
+            { color: active ? colors.accent : colors.textPrimary, fontWeight: active ? "700" : "400" },
+          ]}
+          numberOfLines={1}
+        >
+          {option.label}
+        </Text>
+      </Pressable>
+    );
   };
 
   return (
@@ -121,8 +220,9 @@ export function UploadMaterialModal({ visible, busy, courseId, onClose, onSubmit
           <Text style={[typography.title, { color: colors.textPrimary }]}>Add material</Text>
 
           <View style={[styles.modeRow, { gap: spacing.sm }]}>
-            {(["file", "link"] as UploadMode[]).map((m) => {
+            {(["file", "link", "folder"] as UploadMode[]).map((m) => {
               const active = mode === m;
+              const label = m === "file" ? "File" : m === "link" ? "Link" : "Folder";
               return (
                 <Pressable
                   key={m}
@@ -143,7 +243,7 @@ export function UploadMaterialModal({ visible, busy, courseId, onClose, onSubmit
                       { color: active ? colors.accent : colors.textSecondary, fontWeight: "700" },
                     ]}
                   >
-                    {m === "file" ? "File" : "Link"}
+                    {label}
                   </Text>
                 </Pressable>
               );
@@ -167,7 +267,7 @@ export function UploadMaterialModal({ visible, busy, courseId, onClose, onSubmit
                   value={title}
                   onChangeText={setTitle}
                   editable={!busy}
-                  placeholder="Material title"
+                  placeholder={mode === "folder" ? "Folder name" : "Material title"}
                   placeholderTextColor={colors.textMuted}
                   style={[
                     styles.input,
@@ -178,6 +278,70 @@ export function UploadMaterialModal({ visible, busy, courseId, onClose, onSubmit
                     },
                   ]}
                 />
+              </View>
+
+              <View style={{ gap: spacing.xs }}>
+                <Text style={[typography.caption, styles.label, { color: colors.textSecondary }]}>
+                  {lockedParent ? "LOCATION" : "FOLDER (OPTIONAL)"}
+                </Text>
+                {lockedParent ? (
+                  <View
+                    style={[
+                      styles.pickBtn,
+                      {
+                        borderColor: colors.border,
+                        borderRadius: radius.md,
+                        opacity: 0.85,
+                      },
+                    ]}
+                  >
+                    <MaterialIcons name="folder" size={22} color={colors.highlight} />
+                    <Text
+                      style={[typography.body, { color: colors.textPrimary, flex: 1 }]}
+                      numberOfLines={1}
+                    >
+                      {selectedFolderLabel}
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    <Pressable
+                      onPress={() => setFolderPickerOpen((o) => !o)}
+                      disabled={busy}
+                      style={[
+                        styles.pickBtn,
+                        {
+                          borderColor: colors.border,
+                          borderRadius: radius.md,
+                          opacity: busy ? 0.5 : 1,
+                        },
+                      ]}
+                    >
+                      <MaterialIcons name="folder" size={22} color={colors.highlight} />
+                      <Text
+                        style={[typography.body, { color: colors.textPrimary, flex: 1 }]}
+                        numberOfLines={1}
+                      >
+                        {selectedFolderLabel}
+                      </Text>
+                      <MaterialIcons
+                        name={folderPickerOpen ? "expand-less" : "expand-more"}
+                        size={22}
+                        color={colors.textMuted}
+                      />
+                    </Pressable>
+                    {folderPickerOpen ? (
+                      <View
+                        style={[
+                          styles.folderPickerList,
+                          { borderColor: colors.border, borderRadius: radius.md },
+                        ]}
+                      >
+                        {folderOptions.map(renderFolderOption)}
+                      </View>
+                    ) : null}
+                  </>
+                )}
               </View>
 
               {mode === "file" ? (
@@ -203,7 +367,7 @@ export function UploadMaterialModal({ visible, busy, courseId, onClose, onSubmit
                     </Text>
                   </Pressable>
                 </View>
-              ) : (
+              ) : mode === "link" ? (
                 <View style={{ gap: spacing.xs }}>
                   <Text style={[typography.caption, styles.label, { color: colors.textSecondary }]}>
                     URL
@@ -226,7 +390,7 @@ export function UploadMaterialModal({ visible, busy, courseId, onClose, onSubmit
                     ]}
                   />
                 </View>
-              )}
+              ) : null}
             </ScrollView>
           </KeyboardAvoidingView>
 
@@ -308,6 +472,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 12,
+  },
+  folderPickerList: {
+    borderWidth: 1,
+    paddingVertical: 4,
+    maxHeight: 200,
+  },
+  folderOption: {
+    paddingVertical: 10,
+    paddingRight: 12,
   },
   actions: {
     flexDirection: "row",

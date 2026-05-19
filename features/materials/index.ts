@@ -7,6 +7,7 @@ export { UploadMaterialModal } from "./components/UploadMaterialModal";
 export { useCourseMaterials } from "./hooks/useCourseMaterials";
 export { useUploadMaterial } from "./hooks/useUploadMaterial";
 export { useDeleteMaterial } from "./hooks/useDeleteMaterial";
+export { useUpdateMaterial } from "./hooks/useUpdateMaterial";
 export { courseMaterialsQueryKey } from "./hooks/queryKeys";
 export {
   MATERIAL_FILTER_OPTIONS,

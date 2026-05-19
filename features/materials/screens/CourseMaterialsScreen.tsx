@@ -33,19 +33,34 @@ export function CourseMaterialsScreen({ courseId, courseTitle }: Props) {
   const [sort, setSort] = useState<MaterialSortValue>("date_desc");
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [sortSheetOpen, setSortSheetOpen] = useState(false);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
 
   const filterActive = filter !== "all";
   const sortActive = sort !== "date_desc";
 
-  const handleAdd = useCallback(() => {
-    router.push({
-      pathname: "/course/[id]/material/add",
-      params: { id: courseId, title: courseTitle },
-    });
-  }, [courseId, courseTitle, router]);
+  const handleAdd = useCallback(
+    (parentFolderId?: string | null) => {
+      const resolvedParent = parentFolderId ?? currentFolderId ?? undefined;
+      router.push({
+        pathname: "/course/[id]/material/add",
+        params: {
+          id: courseId,
+          title: courseTitle,
+          ...(resolvedParent ? { parentFolderId: resolvedParent } : {}),
+        },
+      });
+    },
+    [courseId, courseTitle, currentFolderId, router],
+  );
 
   const confirmDelete = (material: CourseMaterial) => {
-    Alert.alert("Delete material", `Remove "${material.title}"?`, [
+    const isFolder = material.kind === "folder";
+    Alert.alert(
+      isFolder ? "Delete folder" : "Delete material",
+      isFolder
+        ? `Delete "${material.title}" and everything inside it?`
+        : `Remove "${material.title}"?`,
+      [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
@@ -65,7 +80,7 @@ export function CourseMaterialsScreen({ courseId, courseTitle }: Props) {
       <MaterialsToolbar
         onFilterPress={() => setFilterSheetOpen(true)}
         onSortPress={() => setSortSheetOpen(true)}
-        onAddPress={handleAdd}
+        onAddPress={() => handleAdd()}
         filterActive={filterActive}
         sortActive={sortActive}
       />
@@ -100,6 +115,8 @@ export function CourseMaterialsScreen({ courseId, courseTitle }: Props) {
           filter={filter}
           sort={sort}
           onDeleteMaterial={confirmDelete}
+          onCurrentFolderChange={setCurrentFolderId}
+          onAddMaterial={(parentFolderId) => handleAdd(parentFolderId)}
         />
       )}
 
