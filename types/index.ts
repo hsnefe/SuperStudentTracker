@@ -53,6 +53,13 @@ export type AttendanceRecord = {
   status: AttendanceStatus;
 };
 
+/** Per-course absence entry (one + tap = one record for that ISO date). */
+export type CourseAbsenceRecord = {
+  id: string;
+  courseId: string;
+  date: string;
+};
+
 export type Task = {
   id: string;
   title: string;
@@ -100,6 +107,8 @@ export type CreateAssignmentInput = {
   priority: AssignmentPriority;
   status: AssignmentStatus;
 };
+
+export type UpdateAssignmentInput = CreateAssignmentInput;
 
 export type GradeComponent = {
   id: string;

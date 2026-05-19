@@ -1,17 +1,18 @@
 import { LinearGradient } from "expo-linear-gradient";
 import {
   ActivityIndicator,
-  Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
   View,
 } from "react-native";
 import { GlassInteractionSurface } from "@/components/course/GlassInteractionSurface";
+import { AttendanceStatCard } from "@/features/attendance";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ReactNode } from "react";
 import { COURSE_BLUR_BRIDGE_HALF_PX, courseHeroMinHeightPx } from "@/constants/courseDetailVisual";
 import { VerticalBlurRamp } from "@/components/course/VerticalBlurRamp";
+import type { TransitionOriginRect } from "@/store/navigationTransitionStore";
 import { useTheme } from "@/hooks";
 
 const APP_BAR_BOTTOM_PADDING = 12;
@@ -20,15 +21,18 @@ export const COURSE_APP_BAR_CONTENT_HEIGHT = 44;
 
 const STAT_CARD_WIDTH = 156;
 
-type StatMock = {
+type AttendanceStat = {
   percentLabel: string;
   caption: string;
+  canAddToday: boolean;
+  onCardPress: (origin: TransitionOriginRect) => void;
+  onAddPress: () => void;
 };
 
 type Props = {
   line1: string;
   line2: string;
-  mockStat: StatMock;
+  attendanceStat: AttendanceStat;
   activeTodos: number;
   assignmentCount: number;
   assignmentsLoading: boolean;
@@ -38,7 +42,7 @@ type Props = {
 export function CourseHeroSection({
   line1,
   line2,
-  mockStat,
+  attendanceStat,
   activeTodos,
   assignmentCount,
   assignmentsLoading,
@@ -84,16 +88,13 @@ export function CourseHeroSection({
         <View style={[styles.bottomBand, { gap: spacing.md }]}>
           <View style={[styles.statsRow, { gap: spacing.sm }]}>
             {/* <lcard> */}
-            <Pressable
-              style={({ pressed }) => [
-                styles.statCardLight,
-                { borderRadius: radius.lg, width: STAT_CARD_WIDTH },
-                pressed && styles.statCardLightPressed,
-              ]}
-            >
-              <Text style={styles.statPercentOrange}>{mockStat.percentLabel}</Text>
-              <Text style={styles.statCaptionDark}>{mockStat.caption}</Text>
-            </Pressable>
+            <AttendanceStatCard
+              percentLabel={attendanceStat.percentLabel}
+              caption={attendanceStat.caption}
+              canAddToday={attendanceStat.canAddToday}
+              onCardPress={attendanceStat.onCardPress}
+              onAddPress={attendanceStat.onAddPress}
+            />
             {/* </lcard> */}
 
             {/* <rcard> */}
@@ -188,29 +189,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "stretch",
     flexShrink: 0,
-  },
-  statCardLight: {
-    backgroundColor: "#fff",
-    padding: 14,
-    minHeight: 120,
-    justifyContent: "space-between",
-  },
-  statCardLightPressed: {
-    opacity: 0.94,
-    transform: [{ scale: 0.98 }],
-  },
-  statPercentOrange: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "#FF653F",
-    fontVariant: ["tabular-nums"],
-  },
-  statCaptionDark: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#3a3a42",
-    lineHeight: 15,
-    marginTop: 8,
   },
   statCardGlassBg: {
     ...StyleSheet.absoluteFillObject,
