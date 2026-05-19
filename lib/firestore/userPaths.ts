@@ -39,3 +39,11 @@ export function userCourseAttendanceCollection(db: Firestore, uid: string) {
 export function userCourseAttendanceDoc(db: Firestore, uid: string, courseId: string) {
   return doc(db, "users", uid, "courseAttendance", courseId);
 }
+
+export function userCourseMaterialsCollection(db: Firestore, uid: string) {
+  return collection(db, "users", uid, "courseMaterials");
+}
+
+export function userCourseMaterialDoc(db: Firestore, uid: string, courseId: string) {
+  return doc(db, "users", uid, "courseMaterials", courseId);
+}

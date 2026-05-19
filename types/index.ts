@@ -141,10 +141,35 @@ export type NoteBlock = {
   order: number;
 };
 
+export type CourseMaterialKind =
+  | "pdf"
+  | "slides"
+  | "link"
+  | "image"
+  | "document"
+  | "other";
+
 export type CourseMaterial = {
   id: string;
   courseId: string;
   title: string;
-  kind: "pdf" | "slides" | "link";
+  kind: CourseMaterialKind;
   uri: string;
+  createdAt: string;
+  fileName?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  storagePath?: string;
+};
+
+export type CreateMaterialInput = {
+  courseId: string;
+  title: string;
+  /** External URL when adding a link (no file upload). */
+  uri?: string;
+  /** Local file URI from document picker. */
+  localFileUri?: string;
+  fileName?: string;
+  mimeType?: string;
+  sizeBytes?: number;
 };
