@@ -111,6 +111,7 @@ export function CourseMaterialsScreen({ courseId, courseTitle }: Props) {
         </Text>
       ) : empty ? null : (
         <MaterialsExplorerView
+          courseId={courseId}
           materials={materials}
           filter={filter}
           sort={sort}

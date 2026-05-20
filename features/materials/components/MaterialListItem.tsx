@@ -1,22 +1,33 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
+import { useEffect } from "react";
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "@/hooks";
+import { useMaterialViewerStore } from "@/store/materialViewerStore";
 import type { CourseMaterial } from "@/types";
 import { formatMaterialDate, formatMaterialSize } from "../lib/materialFormat";
 import { materialKindIcon } from "../lib/materialIcons";
+import { isLocalOnlyMaterial } from "../lib/materialPdfGuards";
 import { MATERIAL_KIND_LABELS } from "../lib/materialOptions";
 
 type Props = {
+  courseId: string;
   material: CourseMaterial;
   onLongPress?: () => void;
   compact?: boolean;
 };
 
-export function MaterialListItem({ material, onLongPress, compact }: Props) {
+export function MaterialListItem({ courseId, material, onLongPress, compact }: Props) {
+  const router = useRouter();
   const { colors, typography, spacing, radius } = useTheme();
+  const { mode, hydrated, hydrate } = useMaterialViewerStore();
   const subtitle = material.fileName ?? formatMaterialDate(material.createdAt);
   const sizeLabel = formatMaterialSize(material.sizeBytes);
+
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
 
   const openMaterial = async () => {
     try {
@@ -26,6 +37,24 @@ export function MaterialListItem({ material, onLongPress, compact }: Props) {
         else Alert.alert("Cannot open link", material.uri);
         return;
       }
+
+      if (material.kind === "pdf") {
+        if (isLocalOnlyMaterial(material)) {
+          Alert.alert(
+            "Upload required",
+            "Upload this PDF to the cloud before viewing it in the app.",
+          );
+          return;
+        }
+        if (hydrated && mode === "in_app") {
+          router.push({
+            pathname: "/course/[id]/material/[materialId]",
+            params: { id: courseId, materialId: material.id },
+          });
+          return;
+        }
+      }
+
       await WebBrowser.openBrowserAsync(material.uri);
     } catch {
       Alert.alert("Could not open", "This file could not be opened on this device.");

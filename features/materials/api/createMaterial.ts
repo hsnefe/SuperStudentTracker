@@ -9,11 +9,13 @@ import { isFirebaseConfigured } from "@/lib/firebase";
 export async function createMaterial(
   uid: string,
   input: CreateMaterialInput,
+  existingMaterials?: CourseMaterial[],
 ): Promise<CourseMaterial> {
   const materialId = newMaterialId();
   const title = input.title.trim();
   const createdAt = new Date().toISOString();
-  const existing = await loadMaterials(uid, input.courseId);
+  const existing =
+    existingMaterials ?? (await loadMaterials(uid, input.courseId));
   const parentFolderId = input.parentFolderId ?? null;
   validateParentFolder(existing, parentFolderId);
 

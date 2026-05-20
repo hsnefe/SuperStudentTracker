@@ -12,6 +12,9 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.superstudenttracker.app"
     },
+    "android": {
+      "package": "com.superstudenttracker.app"
+    },
     "web": {
       "bundler": "metro",
       "output": "single",
@@ -41,6 +44,7 @@
         }
       ],
       "expo-web-browser",
+      "expo-screen-orientation",
       "@react-native-community/datetimepicker"
     ],
     "experiments": {

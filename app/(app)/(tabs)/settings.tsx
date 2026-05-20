@@ -1,5 +1,6 @@
 import { ScrollView, StyleSheet, Text } from "react-native";
 import { AccountSettingsSection } from "@/features/auth/components/AccountSettingsSection";
+import { MaterialPdfSettingsSection } from "@/features/materials/components/MaterialPdfSettingsSection";
 import { ScreenContainer, PlaceholderCard } from "@/components";
 import { useTheme } from "@/hooks";
 
@@ -12,6 +13,8 @@ export default function SettingsRoute() {
         <Text style={[typography.title, { color: colors.textPrimary }]}>Settings</Text>
 
         <AccountSettingsSection />
+
+        <MaterialPdfSettingsSection />
 
         <PlaceholderCard
           title="Notifications"

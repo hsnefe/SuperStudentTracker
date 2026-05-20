@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { createMaterial } from "../api/createMaterial";
-import type { CreateMaterialInput } from "@/types";
+import type { CourseMaterial, CreateMaterialInput } from "@/types";
 import { courseMaterialsListKey } from "./queryKeys";
 
 export function useUploadMaterial(courseId: string) {
@@ -11,7 +11,10 @@ export function useUploadMaterial(courseId: string) {
   return useMutation({
     mutationFn: (input: CreateMaterialInput) => {
       if (!user) throw new Error("Not authenticated");
-      return createMaterial(user.uid, input);
+      const cached = queryClient.getQueryData<CourseMaterial[]>(
+        courseMaterialsListKey(user.uid, courseId),
+      );
+      return createMaterial(user.uid, input, cached);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({

@@ -26,6 +26,8 @@ export default function AddCourseMaterialScreen() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Could not save material.";
       Alert.alert("Save failed", message);
+    } finally {
+      uploadMaterial.reset();
     }
   };
 

@@ -25,6 +25,7 @@ import { MaterialListItem } from "./MaterialListItem";
 type ViewMode = "folders" | "list" | "grid";
 
 type Props = {
+  courseId: string;
   materials: CourseMaterial[];
   filter: MaterialFilterValue;
   sort: MaterialSortValue;
@@ -79,6 +80,7 @@ function FolderCard({
 }
 
 export function MaterialsExplorerView({
+  courseId,
   materials,
   filter,
   sort,
@@ -243,6 +245,7 @@ export function MaterialsExplorerView({
       renderItem={({ item }) => (
         <View style={insideFolder && viewMode === "grid" ? { flex: 1 } : undefined}>
           <MaterialListItem
+            courseId={courseId}
             material={item}
             compact={insideFolder && viewMode === "grid"}
             onLongPress={onDeleteMaterial ? () => onDeleteMaterial(item) : undefined}
@@ -405,6 +408,7 @@ export function MaterialsExplorerView({
             return (
               <View style={{ paddingHorizontal: spacing.lg }}>
                 <MaterialListItem
+                  courseId={courseId}
                   material={item}
                   onLongPress={onDeleteMaterial ? () => onDeleteMaterial(item) : undefined}
                 />
@@ -446,6 +450,7 @@ export function MaterialsExplorerView({
               />
             ) : (
               <MaterialListItem
+                courseId={courseId}
                 material={item}
                 onLongPress={onDeleteMaterial ? () => onDeleteMaterial(item) : undefined}
               />
