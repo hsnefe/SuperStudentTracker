@@ -1,4 +1,7 @@
 export * from "./AssignmentCard";
+export * from "./home/HomeAssignmentStripCard";
+export * from "./home/HomeAssignmentTodoRow";
+export * from "./home/HomeTodayAssignmentsSection";
 export * from "./CourseAssignmentsSection";
 export * from "./CourseGridCard";
 export * from "./ScreenContainer";

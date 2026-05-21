@@ -1,6 +1,7 @@
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { AssignmentCard, PlaceholderCard, ScreenContainer, WeekScheduleCard } from "@/components";
-import { MOCK_HOME_ASSIGNMENTS } from "@/constants/homeMock";
+import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { PlaceholderCard, ScreenContainer, WeekScheduleCard } from "@/components";
+import { HomeTodayAssignmentsSection } from "@/components/home/HomeTodayAssignmentsSection";
+import { useHomeAssignments } from "@/features/home/hooks/useHomeAssignments";
 import { useTheme } from "@/hooks";
 import { isFirebaseConfigured } from "@/lib/firebase";
 
@@ -9,6 +10,7 @@ export default function HomeScreen() {
   const { width: windowWidth } = useWindowDimensions();
   const cardWidth = Math.min(319, Math.max(260, windowWidth * 0.78));
   const cardGap = 16;
+  const { items, loading } = useHomeAssignments();
 
   return (
     <ScreenContainer>
@@ -21,44 +23,12 @@ export default function HomeScreen() {
 
       <WeekScheduleCard />
 
-      <View
-        style={[
-          styles.todayPanel,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-            borderRadius: radius.lg,
-            padding: spacing.lg,
-            gap: spacing.sm,
-          },
-        ]}
-      >
-        <Text style={[typography.heading, { color: colors.textPrimary }]}>Today</Text>
-        <Text style={[typography.body, { color: colors.textSecondary }]}>
-          Upcoming classes and tasks for today will appear here.
-        </Text>
-        <Text style={[typography.caption, { color: colors.textMuted }]}>
-          Phase 1 — connect schedule once classes are added.
-        </Text>
-
-        <View style={{ marginHorizontal: -spacing.lg, marginTop: spacing.sm }}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            nestedScrollEnabled
-            decelerationRate="fast"
-            contentContainerStyle={{
-              paddingHorizontal: spacing.lg,
-              gap: cardGap,
-              paddingBottom: spacing.xs,
-            }}
-          >
-            {MOCK_HOME_ASSIGNMENTS.map((a) => (
-              <AssignmentCard key={a.id} assignment={a} width={cardWidth} />
-            ))}
-          </ScrollView>
-        </View>
-      </View>
+      <HomeTodayAssignmentsSection
+        items={items}
+        loading={loading}
+        cardWidth={cardWidth}
+        cardGap={cardGap}
+      />
 
       <PlaceholderCard
         title="Quick stats"
@@ -93,9 +63,6 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  todayPanel: {
-    borderWidth: 1,
-  },
   statusRow: {
     flexDirection: "row",
     alignItems: "center",

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateAssignment } from "@/features/assignments/api/updateAssignment";
 import { assignmentDetailQueryKey } from "@/features/assignments/hooks/useAssignmentDetail";
+import { homeAssignmentsQueryKey } from "@/features/home/hooks/useHomeAssignments";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import type { UpdateAssignmentInput } from "@/types";
 
@@ -26,6 +27,9 @@ export function useUpdateAssignment() {
       );
       queryClient.invalidateQueries({
         queryKey: ["assignmentDetail", user?.uid],
+      });
+      queryClient.invalidateQueries({
+        queryKey: homeAssignmentsQueryKey(user?.uid),
       });
     },
   });
