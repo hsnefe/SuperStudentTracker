@@ -10,9 +10,11 @@ import {
 } from "react-native";
 import { HomeAssignmentStripCard } from "@/components/home/HomeAssignmentStripCard";
 import { VerticalBlurRamp } from "@/components/course/VerticalBlurRamp";
+import { courseBlurMaxIntensity } from "@/constants/courseDetailVisual";
 import {
-  courseBlurMaxIntensity,
-} from "@/constants/courseDetailVisual";
+  HOME_BLUR_BORDER_RADIUS,
+  HOME_BLUR_OVERLAY_GRADIENT,
+} from "@/constants/homeBlurVisual";
 import type { HomeAssignmentItem } from "@/features/home/hooks/useHomeAssignments";
 import { useToggleAssignmentTask } from "@/features/home/hooks/useToggleAssignmentTask";
 import { useUpdateAssignment } from "@/features/assignments/hooks/useUpdateAssignment";
@@ -117,11 +119,7 @@ export function HomeTodayAssignmentsSection({
         fillParent
         direction="decrease"
         maxIntensity={maxIntensity}
-        overlayGradient={[
-          "rgba(18,12,22,0.72)",
-          "rgba(12,10,18,0.38)",
-          "rgba(8,6,12,0.08)",
-        ]}
+        overlayGradient={[...HOME_BLUR_OVERLAY_GRADIENT]}
         style={styles.bgLayer}
       />
 
@@ -189,7 +187,7 @@ const styles = StyleSheet.create({
   outer: {
     position: "relative",
     overflow: "hidden",
-    borderRadius: 16,
+    borderRadius: HOME_BLUR_BORDER_RADIUS,
     minHeight: 200,
   },
   bgLayer: {

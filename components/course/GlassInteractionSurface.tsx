@@ -62,6 +62,7 @@ type Props = {
   /** White frost over blur; lower keeps photos sharper. Default 0.08. */
   glassOverlayOpacity?: number;
   accessibilityLabel?: string;
+  onHoverChange?: (hovered: boolean) => void;
 };
 
 function resolveTargetScale(
@@ -97,6 +98,7 @@ export function GlassInteractionSurface({
   blurIntensity = DEFAULT_BLUR_INTENSITY,
   glassOverlayOpacity = 0.08,
   accessibilityLabel,
+  onHoverChange,
 }: Props) {
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
@@ -259,8 +261,14 @@ export function GlassInteractionSurface({
       onPress={onPress}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
-      onHoverIn={() => setHovered(true)}
-      onHoverOut={() => setHovered(false)}
+      onHoverIn={() => {
+        setHovered(true);
+        onHoverChange?.(true);
+      }}
+      onHoverOut={() => {
+        setHovered(false);
+        onHoverChange?.(false);
+      }}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
     >
