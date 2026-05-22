@@ -1,10 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, Text, View } from "react-native";
+import type { HomeScheduleBlock } from "@/constants/homeSchedule";
 import {
   WEEK_GRID_END_HOUR,
   WEEK_GRID_START_HOUR,
-  type MockScheduleBlock,
   type SchedulePriority,
 } from "@/constants/weekScheduleMock";
 import { HOME_LABEL_MUTED } from "@/constants/homeBlurVisual";
@@ -74,7 +74,7 @@ export function blockBackground(
 }
 
 export function computeBlockLayout(
-  block: MockScheduleBlock,
+  block: HomeScheduleBlock,
   minuteSpan: number,
   layoutHeightPx: number,
 ): { topPx: number; heightPx: number } {
@@ -88,7 +88,7 @@ export function computeBlockLayout(
 }
 
 type FaceProps = {
-  block: MockScheduleBlock;
+  block: HomeScheduleBlock;
 };
 
 export function ScheduleTaskBlockFace({ block }: FaceProps) {
@@ -96,6 +96,7 @@ export function ScheduleTaskBlockFace({ block }: FaceProps) {
   const dot = priorityDotColor(block.priority, colors);
   const titleColor = "rgba(255,255,255,0.95)";
   const metaColor = HOME_LABEL_MUTED;
+  const showComments = block.commentCount > 0;
 
   return (
     <>
@@ -119,8 +120,12 @@ export function ScheduleTaskBlockFace({ block }: FaceProps) {
           <View style={styles.iconMeta}>
             <Ionicons name="time-outline" size={12} color={metaColor} />
             <Text style={[typography.caption, { color: metaColor }]}>{block.durationLabel}</Text>
-            <Ionicons name="chatbubble-outline" size={12} color={metaColor} />
-            <Text style={[typography.caption, { color: metaColor }]}>{block.commentCount}</Text>
+            {showComments ? (
+              <>
+                <Ionicons name="chatbubble-outline" size={12} color={metaColor} />
+                <Text style={[typography.caption, { color: metaColor }]}>{block.commentCount}</Text>
+              </>
+            ) : null}
           </View>
         </View>
         <Text style={[typography.body, { color: titleColor, fontWeight: "600" }]} numberOfLines={2}>

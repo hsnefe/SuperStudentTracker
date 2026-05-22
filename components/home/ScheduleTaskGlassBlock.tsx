@@ -1,51 +1,96 @@
-import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { GlassInteractionSurface } from "@/components/course/GlassInteractionSurface";
 import {
   ScheduleTaskBlockFace,
   blockBackground,
   computeBlockLayout,
 } from "@/components/home/scheduleBlockShared";
-import { COURSE_GRID_PRESS_SCALE } from "@/constants/glassInteractionVisual";
-import type { MockScheduleBlock } from "@/constants/weekScheduleMock";
+import type { HomeScheduleBlock } from "@/constants/homeSchedule";
+import {
+  SCHEDULE_HOVER_LIFT_PX,
+  SCHEDULE_STACK_PX,
+  type StackedHomeScheduleBlock,
+} from "@/lib/scheduleOverlap";
 import { useTheme } from "@/hooks";
 
-const HOVER_SCALE = 1.02;
+const LIFT_TIMING = { duration: 220, easing: Easing.out(Easing.cubic) };
 
 type Props = {
-  block: MockScheduleBlock;
+  block: HomeScheduleBlock | StackedHomeScheduleBlock;
   minuteSpan: number;
   layoutHeightPx: number;
+  stackIndex?: number;
+  stackSize?: number;
 };
 
-export function ScheduleTaskGlassBlock({ block, minuteSpan, layoutHeightPx }: Props) {
+export function ScheduleTaskGlassBlock({
+  block,
+  minuteSpan,
+  layoutHeightPx,
+  stackIndex = 0,
+  stackSize = 1,
+}: Props) {
   const { colors, spacing, radius } = useTheme();
   const [hovered, setHovered] = useState(false);
+  const [pressed, setPressed] = useState(false);
   const { topPx, heightPx } = computeBlockLayout(block, minuteSpan, layoutHeightPx);
   const bgColor = blockBackground(block.priority, colors);
 
+  const isActive = hovered || pressed;
+  const isTopOfStack = stackIndex === stackSize - 1;
+  const shouldLift = isActive && stackSize > 1 && isTopOfStack;
+
+  const stackOffset = useSharedValue(stackIndex * SCHEDULE_STACK_PX);
+  const liftOffset = useSharedValue(0);
+
+  useEffect(() => {
+    stackOffset.value = withTiming(stackIndex * SCHEDULE_STACK_PX, LIFT_TIMING);
+  }, [stackIndex, stackOffset]);
+
+  useEffect(() => {
+    const liftAmount = shouldLift
+      ? -Math.min(SCHEDULE_HOVER_LIFT_PX, (stackSize - 1) * SCHEDULE_STACK_PX * 4)
+      : 0;
+    liftOffset.value = withTiming(liftAmount, LIFT_TIMING);
+  }, [shouldLift, stackSize, liftOffset]);
+
+  const containerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: stackOffset.value + liftOffset.value }],
+  }));
+
   return (
-    <View
+    <Animated.View
       style={[
         styles.taskAbs,
+        containerStyle,
         {
           top: topPx,
           height: heightPx,
           left: spacing.xs,
           right: spacing.xs,
-          zIndex: hovered ? 10 : 1,
+          zIndex: isActive ? 100 + stackIndex : stackIndex + 1,
         },
       ]}
     >
+      <Pressable
+        style={{ flex: 1, minHeight: heightPx }}
+        onHoverIn={() => setHovered(true)}
+        onHoverOut={() => setHovered(false)}
+        onPressIn={() => setPressed(true)}
+        onPressOut={() => setPressed(false)}
+      >
       <GlassInteractionSurface
         borderRadius={radius.sm}
-        interactive
-        enableScale
-        scaleMode="hoverGrowPressShrink"
-        hoverScale={HOVER_SCALE}
-        pressScale={COURSE_GRID_PRESS_SCALE}
+        interactive={false}
+        enableScale={false}
         enableBlur={false}
-        onHoverChange={setHovered}
         style={{ flex: 1, minHeight: heightPx }}
         background={
           <View
@@ -64,7 +109,8 @@ export function ScheduleTaskGlassBlock({ block, minuteSpan, layoutHeightPx }: Pr
           <ScheduleTaskBlockFace block={block} />
         </View>
       </GlassInteractionSurface>
-    </View>
+      </Pressable>
+    </Animated.View>
   );
 }
 

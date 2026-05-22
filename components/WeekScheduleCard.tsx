@@ -1,6 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Modal,
   Pressable,
   ScrollView,
@@ -21,66 +22,28 @@ import {
   type ScheduleSegment,
 } from "@/components/home/HomeScheduleBlurSection";
 import { ScheduleTaskGlassBlock } from "@/components/home/ScheduleTaskGlassBlock";
-import {
-  ScheduleTaskBlockFace,
-  blockBackground,
-  computeBlockLayout,
-  gridMinutesRange,
-} from "@/components/home/scheduleBlockShared";
+import { gridMinutesRange } from "@/components/home/scheduleBlockShared";
+import type { HomeScheduleBlock } from "@/constants/homeSchedule";
 import {
   HOME_BLUR_BORDER_RADIUS,
   HOME_GRID_LINE_COLOR,
   HOME_LABEL_MUTED,
   HOME_SCHEDULE_NOW_COLOR,
+  HOME_SECTION_TITLE_COLOR,
 } from "@/constants/homeBlurVisual";
 import {
-  MOCK_WEEK_SCHEDULE_BLOCKS,
   WEEK_DAY_LABELS,
   WEEK_GRID_END_HOUR,
   WEEK_GRID_START_HOUR,
-  type MockScheduleBlock,
 } from "@/constants/weekScheduleMock";
+import { useHomeSchedule } from "@/features/home/hooks/useHomeSchedule";
+import { assignOverlapStacks, type StackedHomeScheduleBlock } from "@/lib/scheduleOverlap";
 import { useTheme } from "@/hooks";
 
 const HOUR_ROW_PX = 46;
 const COLLAPSED_GRID_MAX_HEIGHT = 320;
 
 const TIMING = { duration: 280, easing: Easing.out(Easing.cubic) };
-
-function ScheduleTaskBlockBreak({
-  block,
-  minuteSpan,
-  layoutHeightPx,
-}: {
-  block: MockScheduleBlock;
-  minuteSpan: number;
-  layoutHeightPx: number;
-}) {
-  const { colors, spacing, radius } = useTheme();
-  const { topPx, heightPx } = computeBlockLayout(block, minuteSpan, layoutHeightPx);
-
-  return (
-    <View
-      pointerEvents="none"
-      style={[
-        styles.taskAbs,
-        {
-          top: topPx,
-          height: heightPx,
-          left: spacing.xs,
-          right: spacing.xs,
-          borderRadius: radius.sm,
-          backgroundColor: blockBackground(block.priority, colors),
-          borderWidth: StyleSheet.hairlineWidth,
-          borderColor: "rgba(255,255,255,0.12)",
-          overflow: "hidden",
-        },
-      ]}
-    >
-      <ScheduleTaskBlockFace block={block} />
-    </View>
-  );
-}
 
 function CurrentTimeLine({
   minuteSpan,
@@ -117,14 +80,15 @@ function CurrentTimeLine({
   );
 }
 
-function ScheduleGridBody({
-  expanded,
-  maxHeight,
-}: {
+type ScheduleGridBodyProps = {
   expanded: boolean;
   maxHeight?: number;
-}) {
-  const { spacing } = useTheme();
+  blocks: HomeScheduleBlock[];
+  loading: boolean;
+};
+
+function ScheduleGridBody({ expanded, maxHeight, blocks, loading }: ScheduleGridBodyProps) {
+  const { spacing, typography } = useTheme();
   const { width: screenW } = useWindowDimensions();
   const hours: number[] = [];
   for (let h = WEEK_GRID_START_HOUR; h < WEEK_GRID_END_HOUR; h += 1) hours.push(h);
@@ -135,6 +99,32 @@ function ScheduleGridBody({
   const contentWidth = Math.max(0, screenW - spacing.lg * 2 - timeColumnWidth);
   const dayColumnWidth = Math.max(contentWidth / WEEK_DAY_LABELS.length, 40);
   const columnsWidth = WEEK_DAY_LABELS.length * dayColumnWidth;
+
+  const blocksByDay = useMemo(() => {
+    const byDay: StackedHomeScheduleBlock[][] = Array.from({ length: WEEK_DAY_LABELS.length }, () => []);
+    for (let dayIdx = 0; dayIdx < WEEK_DAY_LABELS.length; dayIdx += 1) {
+      const dayBlocks = blocks.filter((b) => b.dayIndex === dayIdx);
+      byDay[dayIdx] = assignOverlapStacks(dayBlocks);
+    }
+    return byDay;
+  }, [blocks]);
+
+  if (loading) {
+    return (
+      <ActivityIndicator
+        color={HOME_SECTION_TITLE_COLOR}
+        style={{ paddingVertical: spacing.lg, alignSelf: "center" }}
+      />
+    );
+  }
+
+  if (blocks.length === 0) {
+    return (
+      <Text style={[typography.body, { color: HOME_LABEL_MUTED, paddingVertical: spacing.md }]}>
+        No classes scheduled this week.
+      </Text>
+    );
+  }
 
   const scrollVertical = (
     <ScrollView
@@ -186,23 +176,16 @@ function ScheduleGridBody({
                   },
                 ]}
               >
-                {MOCK_WEEK_SCHEDULE_BLOCKS.filter((b) => b.dayIndex === dayIdx).map((b) =>
-                  b.priority === "break" ? (
-                    <ScheduleTaskBlockBreak
-                      key={b.id}
-                      block={b}
-                      minuteSpan={minuteSpan}
-                      layoutHeightPx={layoutHeightPx}
-                    />
-                  ) : (
-                    <ScheduleTaskGlassBlock
-                      key={b.id}
-                      block={b}
-                      minuteSpan={minuteSpan}
-                      layoutHeightPx={layoutHeightPx}
-                    />
-                  ),
-                )}
+                {blocksByDay[dayIdx].map((b) => (
+                  <ScheduleTaskGlassBlock
+                    key={b.id}
+                    block={b}
+                    minuteSpan={minuteSpan}
+                    layoutHeightPx={layoutHeightPx}
+                    stackIndex={b.stackIndex}
+                    stackSize={b.stackSize}
+                  />
+                ))}
               </View>
             ))}
           </View>
@@ -255,6 +238,7 @@ function DayLabelsRow() {
 export function WeekScheduleCard() {
   const navigation = useNavigation();
   const { width: screenW, height: screenH } = useWindowDimensions();
+  const { blocks, loading } = useHomeSchedule();
 
   const [expanded, setExpanded] = useState(false);
   const [selectedSegment, setSelectedSegment] = useState<ScheduleSegment>("Week");
@@ -346,16 +330,18 @@ export function WeekScheduleCard() {
   }, [navigation]);
 
   const onGridPress = useCallback(() => {
+    if (loading || blocks.length === 0) return;
     if (expanded) collapseToCard();
     else expandFromCard();
-  }, [collapseToCard, expandFromCard, expanded]);
+  }, [blocks.length, collapseToCard, expandFromCard, expanded, loading]);
 
   const renderGrid = (fullScreen: boolean) => (
     <Pressable
       accessibilityRole="button"
       onPress={onGridPress}
+      disabled={loading || blocks.length === 0}
       style={({ pressed }) => ({
-        opacity: pressed ? 0.92 : 1,
+        opacity: pressed && blocks.length > 0 ? 0.92 : 1,
         flex: fullScreen ? 1 : undefined,
       })}
     >
@@ -363,6 +349,8 @@ export function WeekScheduleCard() {
       <ScheduleGridBody
         expanded={fullScreen}
         maxHeight={fullScreen ? undefined : COLLAPSED_GRID_MAX_HEIGHT}
+        blocks={blocks}
+        loading={loading}
       />
     </Pressable>
   );
@@ -431,11 +419,6 @@ const styles = StyleSheet.create({
   },
   dayColumn: {
     position: "relative",
-  },
-  taskAbs: {
-    position: "absolute",
-    left: 0,
-    right: 0,
   },
   nowLineWrap: {
     position: "absolute",

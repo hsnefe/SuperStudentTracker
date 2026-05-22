@@ -7,10 +7,11 @@ import { courseBlurMaxIntensity } from "@/constants/courseDetailVisual";
 import {
   HOME_BLUR_BORDER_RADIUS,
   HOME_BLUR_OVERLAY_GRADIENT,
+  HOME_SECTION_TITLE_COLOR,
 } from "@/constants/homeBlurVisual";
 import { useTheme } from "@/hooks";
 
-export const SCHEDULE_SEGMENTS = ["Today", "Week", "Month", "Year"] as const;
+export const SCHEDULE_SEGMENTS = ["Upcoming", "Week", "Month", "Year"] as const;
 export type ScheduleSegment = (typeof SCHEDULE_SEGMENTS)[number];
 
 type Props = {
@@ -141,7 +142,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    color: "#fff",
+    color: HOME_SECTION_TITLE_COLOR,
     fontWeight: "800",
     textAlign: "center",
     textTransform: "uppercase",

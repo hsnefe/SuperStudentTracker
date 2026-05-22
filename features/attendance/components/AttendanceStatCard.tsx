@@ -8,6 +8,11 @@ import {
   type View as RNView,
 } from "react-native";
 import type { TransitionOriginRect } from "@/store/navigationTransitionStore";
+import {
+  ATTENDANCE_CARD_ACCENT,
+  ATTENDANCE_CARD_BG,
+  ATTENDANCE_CARD_CAPTION,
+} from "@/features/attendance/constants/attendanceCardVisual";
 import { useTheme } from "@/hooks";
 
 const CARD_WIDTH = 156;
@@ -99,7 +104,7 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: ATTENDANCE_CARD_BG,
     padding: 14,
     minHeight: 120,
     justifyContent: "space-between",
@@ -111,13 +116,13 @@ const styles = StyleSheet.create({
   percent: {
     fontSize: 32,
     fontWeight: "800",
-    color: "#FF653F",
+    color: ATTENDANCE_CARD_ACCENT,
     fontVariant: ["tabular-nums"],
   },
   caption: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#3a3a42",
+    color: ATTENDANCE_CARD_CAPTION,
     lineHeight: 15,
     marginTop: 8,
   },
@@ -128,7 +133,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#FF653F",
+    backgroundColor: ATTENDANCE_CARD_ACCENT,
     alignItems: "center",
     justifyContent: "center",
     zIndex: 2,

@@ -14,6 +14,7 @@ import { courseBlurMaxIntensity } from "@/constants/courseDetailVisual";
 import {
   HOME_BLUR_BORDER_RADIUS,
   HOME_BLUR_OVERLAY_GRADIENT,
+  HOME_SECTION_TITLE_COLOR,
 } from "@/constants/homeBlurVisual";
 import type { HomeAssignmentItem } from "@/features/home/hooks/useHomeAssignments";
 import { useUpdateAssignment } from "@/features/assignments/hooks/useUpdateAssignment";
@@ -152,14 +153,14 @@ export function HomeTodayAssignmentsSection({
           style={[typography.title, styles.title]}
           accessibilityRole="header"
         >
-          TODAY
+          UPCOMING
         </Text>
 
         {sectionLoading ? (
-          <ActivityIndicator color="#FFC85C" style={{ paddingVertical: spacing.lg }} />
+          <ActivityIndicator color={HOME_SECTION_TITLE_COLOR} style={{ paddingVertical: spacing.lg }} />
         ) : localItems.length === 0 ? (
           <Text style={[typography.body, styles.empty]}>
-            No assignments yet. Add assignments from a course.
+            No upcoming assignments. Add assignments from a course.
           </Text>
         ) : (
           <View style={{ marginHorizontal: -spacing.lg, marginTop: spacing.sm }}>
@@ -224,7 +225,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   title: {
-    color: "#fff",
+    color: HOME_SECTION_TITLE_COLOR,
     fontWeight: "800",
     textAlign: "center",
     textTransform: "uppercase",

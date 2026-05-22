@@ -1,6 +1,9 @@
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useEffect, useMemo } from "react";
 import {
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,7 +18,18 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { courseBlurMaxIntensity } from "@/constants/courseDetailVisual";
 import { EXPAND_TRANSITION_MS } from "@/constants/navigationTransition";
+import {
+  ATTENDANCE_CARD_ACCENT,
+  ATTENDANCE_CARD_BORDER,
+  ATTENDANCE_CARD_CAPTION,
+  ATTENDANCE_CARD_MUTED,
+  ATTENDANCE_CARD_TEXT,
+  ATTENDANCE_MODAL_GLASS_FROST,
+  ATTENDANCE_MODAL_GLASS_OVERLAY,
+  ATTENDANCE_MODAL_GLASS_OVERLAY_WEB,
+} from "@/features/attendance/constants/attendanceCardVisual";
 import {
   formatAbsenceCountLabel,
   groupAbsencesByDate,
@@ -43,7 +57,9 @@ export function AttendanceDetailModal({
   onClose,
 }: Props) {
   const { width: screenW, height: screenH } = useWindowDimensions();
-  const { colors, spacing, typography, radius } = useTheme();
+  const { spacing, typography, radius } = useTheme();
+  const blurIntensity = courseBlurMaxIntensity();
+  const glassOverlay = Platform.OS === "web" ? ATTENDANCE_MODAL_GLASS_OVERLAY_WEB : ATTENDANCE_MODAL_GLASS_OVERLAY;
 
   const modalWidth = Math.min(screenW - 32, MODAL_MAX_WIDTH);
   const modalMaxHeight = Math.min(screenH * 0.88, 720);
@@ -118,22 +134,32 @@ export function AttendanceDetailModal({
             cardStyle,
             styles.card,
             {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
+              borderColor: ATTENDANCE_CARD_BORDER,
               borderRadius: radius.lg,
             },
           ]}
         >
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            <Text style={[typography.title, { color: colors.textPrimary }]}>Attendance</Text>
+          <BlurView
+            intensity={blurIntensity}
+            tint="light"
+            style={StyleSheet.absoluteFillObject}
+            experimentalBlurMethod={Platform.OS === "android" ? "dimezisBlurView" : undefined}
+          />
+          <LinearGradient colors={[...glassOverlay]} style={StyleSheet.absoluteFillObject} />
+          <View
+            pointerEvents="none"
+            style={[
+              StyleSheet.absoluteFillObject,
+              { backgroundColor: ATTENDANCE_MODAL_GLASS_FROST },
+            ]}
+          />
+
+          <Pressable onPress={(e) => e.stopPropagation()} style={styles.cardContent}>
+            <Text style={[typography.title, styles.title]}>Attendance</Text>
 
             <View style={[styles.summary, { marginTop: spacing.md, marginBottom: spacing.sm }]}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>
-                Total absence tolerance
-              </Text>
-              <Text style={[typography.body, { color: colors.textPrimary, fontWeight: "700" }]}>
-                {absenceToleranceHours}
-              </Text>
+              <Text style={[typography.caption, styles.caption]}>Total absence tolerance</Text>
+              <Text style={[typography.body, styles.toleranceValue]}>{absenceToleranceHours}</Text>
             </View>
 
             <ScrollView
@@ -142,19 +168,12 @@ export function AttendanceDetailModal({
               showsVerticalScrollIndicator
             >
               {groups.length === 0 ? (
-                <Text style={[typography.body, { color: colors.textMuted }]}>
-                  No absences recorded yet.
-                </Text>
+                <Text style={[typography.body, styles.empty]}>No absences recorded yet.</Text>
               ) : (
                 groups.map((g) => (
-                  <View
-                    key={g.date}
-                    style={[styles.row, { borderBottomColor: colors.border }]}
-                  >
-                    <Text style={[typography.body, { color: colors.textPrimary, flex: 1 }]}>
-                      {g.label}
-                    </Text>
-                    <Text style={[typography.caption, { color: colors.textSecondary }]}>
+                  <View key={g.date} style={[styles.row, { borderBottomColor: ATTENDANCE_CARD_BORDER }]}>
+                    <Text style={[typography.body, styles.rowLabel, { flex: 1 }]}>{g.label}</Text>
+                    <Text style={[typography.caption, styles.rowCount]}>
                       {formatAbsenceCountLabel(g.count)}
                     </Text>
                   </View>
@@ -162,13 +181,15 @@ export function AttendanceDetailModal({
               )}
             </ScrollView>
 
-            <View style={[styles.actions, { borderTopColor: colors.border, marginTop: spacing.md }]}>
+            <View
+              style={[styles.actions, { borderTopColor: ATTENDANCE_CARD_BORDER, marginTop: spacing.md }]}
+            >
               <Pressable
                 onPress={animateClose}
-                style={[styles.closeBtn, { borderColor: colors.border, borderRadius: radius.md }]}
+                style={[styles.closeBtn, { borderColor: ATTENDANCE_CARD_BORDER, borderRadius: radius.md }]}
                 accessibilityRole="button"
               >
-                <Text style={[typography.caption, { color: colors.textSecondary }]}>Close</Text>
+                <Text style={[typography.caption, styles.closeLabel]}>Close</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -188,8 +209,30 @@ const styles = StyleSheet.create({
   },
   card: {
     borderWidth: StyleSheet.hairlineWidth,
-    padding: 20,
     overflow: "hidden",
+    shadowColor: ATTENDANCE_CARD_ACCENT,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  cardContent: {
+    padding: 20,
+    flex: 1,
+  },
+  title: {
+    color: ATTENDANCE_CARD_ACCENT,
+    fontWeight: "800",
+  },
+  caption: {
+    color: ATTENDANCE_CARD_CAPTION,
+  },
+  toleranceValue: {
+    color: ATTENDANCE_CARD_TEXT,
+    fontWeight: "700",
+  },
+  empty: {
+    color: ATTENDANCE_CARD_MUTED,
   },
   summary: {
     gap: 4,
@@ -202,6 +245,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 12,
   },
+  rowLabel: {
+    color: ATTENDANCE_CARD_TEXT,
+  },
+  rowCount: {
+    color: ATTENDANCE_CARD_CAPTION,
+    fontWeight: "600",
+  },
   actions: {
     flexDirection: "row",
     justifyContent: "flex-end",
@@ -212,5 +262,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderWidth: 1,
+  },
+  closeLabel: {
+    color: ATTENDANCE_CARD_CAPTION,
+    fontWeight: "600",
   },
 });
