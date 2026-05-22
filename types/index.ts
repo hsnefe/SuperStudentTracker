@@ -68,6 +68,50 @@ export type Task = {
   done: boolean;
 };
 
+/** Global to-do (Tasks tab); replaces nested Assignment.tasks over time. */
+export type TodoItem = {
+  id: string;
+  name: string;
+  done: boolean;
+  assignmentId?: string;
+  courseId?: string;
+  deadline?: string;
+  prerequisiteIds: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateTodoInput = {
+  name: string;
+  done?: boolean;
+  assignmentId?: string;
+  courseId?: string;
+  deadline?: string;
+  prerequisiteIds?: string[];
+};
+
+export type UpdateTodoInput = {
+  name?: string;
+  done?: boolean;
+  assignmentId?: string | null;
+  courseId?: string | null;
+  deadline?: string | null;
+  prerequisiteIds?: string[];
+};
+
+export type TodoSortField = "updatedAt" | "deadline" | "name";
+export type SortDirection = "asc" | "desc";
+
+export type ListTodosQuery = {
+  done?: boolean;
+  deadlineFrom?: string;
+  deadlineTo?: string;
+  assignmentId?: string;
+  courseId?: string;
+  sortBy?: TodoSortField;
+  sortDir?: SortDirection;
+};
+
 /** Firestore bucket id for assignments not tied to a course. */
 export const NO_COURSE_ASSIGNMENTS_ID = "__none__";
 

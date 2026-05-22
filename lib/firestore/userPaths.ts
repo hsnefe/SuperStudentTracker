@@ -47,3 +47,11 @@ export function userCourseMaterialsCollection(db: Firestore, uid: string) {
 export function userCourseMaterialDoc(db: Firestore, uid: string, courseId: string) {
   return doc(db, "users", uid, "courseMaterials", courseId);
 }
+
+export function userTodosCollection(db: Firestore, uid: string) {
+  return collection(db, "users", uid, "todos");
+}
+
+export function userTodoDoc(db: Firestore, uid: string, todoId: string) {
+  return doc(db, "users", uid, "todos", todoId);
+}
