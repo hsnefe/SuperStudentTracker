@@ -10,24 +10,26 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { AssignmentStripCard } from "@/components/course/AssignmentStripCard";
+import {
+  AssignmentStripCard,
+  COURSE_STRIP_CARD_WIDTH,
+} from "@/components/course/AssignmentStripCard";
 import { VerticalBlurRamp } from "@/components/course/VerticalBlurRamp";
 import {
   COURSE_BLUR_BRIDGE_HALF_PX,
   courseBlurMaxIntensity,
 } from "@/constants/courseDetailVisual";
 import { useTheme } from "@/hooks";
-import type { Assignment, AssignmentPriority } from "@/types";
-
-const CARD_W = 168;
-const CARD_H = 132;
+import type { Assignment, AssignmentPriority, TodoItem } from "@/types";
 
 type Props = {
   courseId: string;
   courseTitle: string;
   assignments: Assignment[];
+  todosByAssignmentId: Map<string, TodoItem[]>;
   loading: boolean;
   onAddPress: () => void;
+  onTodoComplete: (assignmentId: string, todoId: string) => void;
   priorityBusy?: boolean;
   onPriorityChange?: (assignment: Assignment, nextPriority: AssignmentPriority) => void;
   /** Grows to fill scroll area below hero (e.g. `{ flex: 1 }`). */
@@ -38,8 +40,10 @@ export function CourseAssignmentsBlurSection({
   courseId,
   courseTitle,
   assignments,
+  todosByAssignmentId,
   loading,
   onAddPress,
+  onTodoComplete,
   priorityBusy,
   onPriorityChange,
   style,
@@ -122,14 +126,15 @@ export function CourseAssignmentsBlurSection({
                 variant={(i % 4) as 0 | 1 | 2 | 3}
                 indexLabel={String(i + 1).padStart(2, "0")}
                 assignment={a}
-                width={CARD_W}
-                height={CARD_H}
+                todos={todosByAssignmentId.get(a.id) ?? []}
+                width={COURSE_STRIP_CARD_WIDTH}
                 priorityDisabled={priorityBusy}
                 onPriorityCycle={
                   onPriorityChange
                     ? (next) => onPriorityChange(a, next)
                     : undefined
                 }
+                onTodoComplete={(todoId) => onTodoComplete(a.id, todoId)}
                 href={{
                   pathname: "/course/[id]/assignment/[assignmentId]",
                   params: {

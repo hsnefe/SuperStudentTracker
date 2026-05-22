@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -16,10 +16,11 @@ import {
   HOME_BLUR_OVERLAY_GRADIENT,
 } from "@/constants/homeBlurVisual";
 import type { HomeAssignmentItem } from "@/features/home/hooks/useHomeAssignments";
-import { useToggleAssignmentTask } from "@/features/home/hooks/useToggleAssignmentTask";
 import { useUpdateAssignment } from "@/features/assignments/hooks/useUpdateAssignment";
+import { useTodosByAssignmentIds } from "@/features/todos/hooks/useTodosByAssignmentIds";
+import { useToggleTodoDone } from "@/features/todos/hooks/useToggleTodoDone";
 import { useTheme } from "@/hooks";
-import type { Assignment, AssignmentPriority } from "@/types";
+import type { Assignment, AssignmentPriority, TodoItem } from "@/types";
 
 type Props = {
   items: HomeAssignmentItem[];
@@ -28,6 +29,21 @@ type Props = {
   cardGap: number;
   style?: StyleProp<ViewStyle>;
 };
+
+function markTodoDoneInMap(
+  map: Map<string, TodoItem[]>,
+  assignmentId: string,
+  todoId: string,
+): Map<string, TodoItem[]> {
+  const next = new Map(map);
+  const list = next.get(assignmentId);
+  if (!list) return next;
+  next.set(
+    assignmentId,
+    list.map((t) => (t.id === todoId ? { ...t, done: true } : t)),
+  );
+  return next;
+}
 
 export function HomeTodayAssignmentsSection({
   items,
@@ -38,14 +54,32 @@ export function HomeTodayAssignmentsSection({
 }: Props) {
   const { typography, spacing } = useTheme();
   const updateAssignment = useUpdateAssignment();
-  const toggleTask = useToggleAssignmentTask();
+  const toggleTodo = useToggleTodoDone();
   const maxIntensity = courseBlurMaxIntensity();
 
   const [localItems, setLocalItems] = useState(items);
+  const assignmentIds = useMemo(
+    () => localItems.map((item) => item.assignment.id),
+    [localItems],
+  );
+  const {
+    todosByAssignmentId,
+    loading: todosLoading,
+    dataUpdatedAt: todosDataUpdatedAt,
+  } = useTodosByAssignmentIds(assignmentIds);
+  const [optimisticTodosByAssignment, setOptimisticTodosByAssignment] = useState<
+    Map<string, TodoItem[]> | null
+  >(null);
+
+  const displayTodosByAssignment = optimisticTodosByAssignment ?? todosByAssignmentId;
 
   useEffect(() => {
     setLocalItems(items);
   }, [items]);
+
+  useEffect(() => {
+    setOptimisticTodosByAssignment(null);
+  }, [todosDataUpdatedAt]);
 
   const handlePriorityChange = useCallback(
     (assignment: Assignment, nextPriority: AssignmentPriority) => {
@@ -78,40 +112,30 @@ export function HomeTodayAssignmentsSection({
     [updateAssignment],
   );
 
-  const handleTaskComplete = useCallback(
-    (assignment: Assignment, taskId: string) => {
-      let snapshot: HomeAssignmentItem[] = [];
-      setLocalItems((prev) => {
-        snapshot = prev;
-        return prev.map((item) => {
-          if (item.assignment.id !== assignment.id) return item;
-          return {
-            ...item,
-            assignment: {
-              ...item.assignment,
-              tasks: item.assignment.tasks.map((t) =>
-                t.id === taskId ? { ...t, done: true } : t,
-              ),
-            },
-          };
-        });
-      });
+  const handleTodoComplete = useCallback(
+    (assignmentId: string, todoId: string) => {
+      const base = optimisticTodosByAssignment ?? todosByAssignmentId;
+      const snapshot = optimisticTodosByAssignment ?? todosByAssignmentId;
+      setOptimisticTodosByAssignment(markTodoDoneInMap(base, assignmentId, todoId));
 
-      toggleTask.mutate(
-        {
-          routeCourseId: assignment.courseId,
-          assignmentId: assignment.id,
-          taskId,
-        },
+      toggleTodo.mutate(
+        { todoId, done: true },
         {
           onError: () => {
-            setLocalItems(snapshot);
+            setOptimisticTodosByAssignment(
+              snapshot === todosByAssignmentId ? null : new Map(snapshot),
+            );
+          },
+          onSuccess: () => {
+            setOptimisticTodosByAssignment(null);
           },
         },
       );
     },
-    [toggleTask],
+    [optimisticTodosByAssignment, todosByAssignmentId, toggleTodo],
   );
+
+  const sectionLoading = loading || (assignmentIds.length > 0 && todosLoading);
 
   return (
     <View style={[styles.outer, style]}>
@@ -131,7 +155,7 @@ export function HomeTodayAssignmentsSection({
           TODAY
         </Text>
 
-        {loading ? (
+        {sectionLoading ? (
           <ActivityIndicator color="#FFC85C" style={{ paddingVertical: spacing.lg }} />
         ) : localItems.length === 0 ? (
           <Text style={[typography.body, styles.empty]}>
@@ -153,16 +177,18 @@ export function HomeTodayAssignmentsSection({
               {localItems.map((item, i) => {
                 const { assignment, courseTitle } = item;
                 const variant = (i % 4) as 0 | 1 | 2 | 3;
+                const todos = displayTodosByAssignment.get(assignment.id) ?? [];
                 return (
                   <HomeAssignmentStripCard
                     key={assignment.id}
                     variant={variant}
                     assignment={assignment}
+                    todos={todos}
                     courseTitle={courseTitle}
                     width={cardWidth}
                     priorityDisabled={updateAssignment.isPending}
                     onPriorityCycle={(next) => handlePriorityChange(assignment, next)}
-                    onTaskComplete={(taskId) => handleTaskComplete(assignment, taskId)}
+                    onTodoComplete={(todoId) => handleTodoComplete(assignment.id, todoId)}
                     href={{
                       pathname: "/course/[id]/assignment/[assignmentId]",
                       params: {

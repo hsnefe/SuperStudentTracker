@@ -1,7 +1,7 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CourseAssignmentsBlurSection } from "@/components/course/CourseAssignmentsBlurSection";
@@ -29,12 +29,16 @@ import {
 import { loadCourseAttendance, saveCourseAttendance } from "@/lib/persistence/courseAttendance";
 import { loadAssignments } from "@/lib/persistence/courseAssignments";
 import type { TransitionOriginRect } from "@/store/navigationTransitionStore";
+import { useTodos } from "@/features/todos/hooks/useTodos";
+import { useTodosByAssignmentIds } from "@/features/todos/hooks/useTodosByAssignmentIds";
+import { useToggleTodoDone } from "@/features/todos/hooks/useToggleTodoDone";
 import type {
   Assignment,
   AssignmentPriority,
   CourseAbsenceRecord,
   CreateAssignmentInput,
   ScheduleSlot,
+  TodoItem,
   UpdateCourseInput,
 } from "@/types";
 
@@ -62,6 +66,23 @@ export default function CourseDetailScreen() {
   const updateCourse = useUpdateCourse();
   const deleteCourse = useDeleteCourse();
   const courseForEdit = useCourseForEdit(id, editModalVisible);
+  const assignmentIds = useMemo(() => assignments.map((a) => a.id), [assignments]);
+  const {
+    todosByAssignmentId,
+    loading: todosLoading,
+    dataUpdatedAt: todosDataUpdatedAt,
+  } = useTodosByAssignmentIds(assignmentIds);
+  const courseTodosQuery = useTodos({ courseId: id, done: false });
+  const toggleTodo = useToggleTodoDone();
+  const [optimisticTodosByAssignment, setOptimisticTodosByAssignment] = useState<
+    Map<string, TodoItem[]> | null
+  >(null);
+
+  const displayTodosByAssignment = optimisticTodosByAssignment ?? todosByAssignmentId;
+
+  useEffect(() => {
+    setOptimisticTodosByAssignment(null);
+  }, [todosDataUpdatedAt]);
 
   const refreshAssignments = useCallback(() => {
     if (!user) return;
@@ -182,13 +203,37 @@ export default function CourseDetailScreen() {
     setExpandOrigin(null);
   }, []);
 
-  const activeTodos = useMemo(
-    () =>
-      assignments.reduce(
-        (acc, a) => acc + a.tasks.filter((t) => !t.done).length,
-        0,
-      ),
-    [assignments],
+  const activeTodos = courseTodosQuery.data?.length ?? 0;
+
+  const handleTodoComplete = useCallback(
+    (assignmentId: string, todoId: string) => {
+      const base = optimisticTodosByAssignment ?? todosByAssignmentId;
+      const list = base.get(assignmentId);
+      if (!list) return;
+
+      const snapshot = optimisticTodosByAssignment ?? todosByAssignmentId;
+      const next = new Map(base);
+      next.set(
+        assignmentId,
+        list.map((t) => (t.id === todoId ? { ...t, done: true } : t)),
+      );
+      setOptimisticTodosByAssignment(next);
+
+      toggleTodo.mutate(
+        { todoId, done: true },
+        {
+          onError: () => {
+            setOptimisticTodosByAssignment(
+              snapshot === todosByAssignmentId ? null : new Map(snapshot),
+            );
+          },
+          onSuccess: () => {
+            setOptimisticTodosByAssignment(null);
+          },
+        },
+      );
+    },
+    [optimisticTodosByAssignment, todosByAssignmentId, toggleTodo],
   );
 
   const assignmentCount = assignments.length;
@@ -259,8 +304,10 @@ export default function CourseDetailScreen() {
             courseId={id}
             courseTitle={title}
             assignments={assignments}
-            loading={assignmentsLoading}
+            todosByAssignmentId={displayTodosByAssignment}
+            loading={assignmentsLoading || todosLoading}
             onAddPress={() => setCreateModalVisible(true)}
+            onTodoComplete={handleTodoComplete}
             priorityBusy={updateAssignment.isPending}
             onPriorityChange={handlePriorityChange}
             style={{

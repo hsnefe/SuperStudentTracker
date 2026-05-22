@@ -1,7 +1,6 @@
 import type { Href } from "expo-router";
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Animated, { LinearTransition } from "react-native-reanimated";
 import {
   AssignmentStripCardBackground,
   STRIP_CARD_RADIUS,
@@ -9,56 +8,42 @@ import {
 } from "@/components/course/AssignmentStripCardBackground";
 import { stripCardMetaColor } from "@/components/course/assignmentStripCardTypography";
 import { GlassInteractionSurface } from "@/components/course/GlassInteractionSurface";
-import { HomeAssignmentTodoRow } from "@/components/home/HomeAssignmentTodoRow";
+import { AssignmentStripCardTodoBlock } from "@/components/assignment/AssignmentStripCardTodoBlock";
 import { formatDeadlineDisplay } from "@/features/assignments/lib/assignmentFormUtils";
 import { AssignmentPriorityBadge } from "@/features/assignments/components/AssignmentPriorityBadge";
-import { useExpandNavigation, useTheme } from "@/hooks";
-import type { Assignment, AssignmentPriority } from "@/types";
+import { useExpandNavigation } from "@/hooks";
+import type { Assignment, AssignmentPriority, TodoItem } from "@/types";
 
-const CARD_MIN_HEIGHT = 351;
-const MAX_VISIBLE_TODOS = 3;
+export const HOME_STRIP_CARD_MIN_HEIGHT = 351;
 
 type Props = {
   variant: AssignmentStripCardVariant;
   assignment: Assignment;
+  todos: TodoItem[];
   courseTitle?: string;
   width: number;
   href: Href;
   priorityDisabled?: boolean;
   onPriorityCycle?: (next: AssignmentPriority) => void;
-  onTaskComplete: (taskId: string) => void;
+  onTodoComplete: (todoId: string) => void;
 };
-
-function assignmentProgress(assignment: Assignment): number {
-  const { tasks } = assignment;
-  if (tasks.length === 0) return 0;
-  return tasks.filter((t) => t.done).length / tasks.length;
-}
 
 export function HomeAssignmentStripCard({
   variant,
   assignment,
+  todos,
   courseTitle,
   width,
   href,
   priorityDisabled,
   onPriorityCycle,
-  onTaskComplete,
+  onTodoComplete,
 }: Props) {
   const rootRef = useRef<View>(null);
   const { pushExpand } = useExpandNavigation();
-  const { colors, radius, spacing, typography } = useTheme();
   const metaColor = stripCardMetaColor(variant);
 
-  const incompleteTasks = useMemo(
-    () => assignment.tasks.filter((t) => !t.done),
-    [assignment.tasks],
-  );
-  const visibleTasks = incompleteTasks.slice(0, MAX_VISIBLE_TODOS);
-  const moreCount = incompleteTasks.length - visibleTasks.length;
-  const progressPct = Math.round(assignmentProgress(assignment) * 100);
-
-  const faceSize = { width, minHeight: CARD_MIN_HEIGHT };
+  const faceSize = { width, minHeight: HOME_STRIP_CARD_MIN_HEIGHT };
 
   const inner = (
     <View style={[styles.facePad, faceSize]}>
@@ -100,47 +85,12 @@ export function HomeAssignmentStripCard({
         </Text>
       ) : null}
 
-      <Animated.View layout={LinearTransition.duration(350)} style={styles.todoBlock}>
-        {visibleTasks.map((task) => (
-          <HomeAssignmentTodoRow
-            key={task.id}
-            task={task}
-            labelColor={metaColor}
-            onComplete={onTaskComplete}
-          />
-        ))}
-        {moreCount > 0 ? (
-          <Text style={[styles.moreHint, { color: metaColor }]}>+{moreCount} more</Text>
-        ) : null}
-      </Animated.View>
-
-      <View style={styles.footer}>
-        <Text style={[styles.due, { color: metaColor }]} numberOfLines={1}>
-          Due {formatDeadlineDisplay(assignment.deadline)}
-        </Text>
-        <View style={styles.progressBlock}>
-          <View style={[styles.track, { borderRadius: radius.pill }]}>
-            <View
-              style={[
-                styles.fill,
-                {
-                  width: `${progressPct}%`,
-                  backgroundColor: colors.highlight,
-                  borderRadius: radius.pill,
-                },
-              ]}
-            />
-          </View>
-          <Text
-            style={[
-              typography.caption,
-              { color: "rgba(255,255,255,0.65)", marginTop: spacing.xs },
-            ]}
-          >
-            {progressPct}%
-          </Text>
-        </View>
-      </View>
+      <AssignmentStripCardTodoBlock
+        todos={todos}
+        labelColor={metaColor}
+        onTodoComplete={onTodoComplete}
+        dueLabel={`Due ${formatDeadlineDisplay(assignment.deadline)}`}
+      />
     </View>
   );
 
@@ -210,37 +160,5 @@ const styles = StyleSheet.create({
   },
   descLight: {
     color: "rgba(255,255,255,0.88)",
-  },
-  todoBlock: {
-    flex: 1,
-    minHeight: 72,
-    marginTop: 4,
-  },
-  moreHint: {
-    fontSize: 11,
-    fontWeight: "600",
-    marginTop: 2,
-    opacity: 0.85,
-  },
-  footer: {
-    marginTop: "auto",
-    gap: 6,
-    paddingTop: 4,
-  },
-  due: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  progressBlock: {
-    minHeight: 36,
-    justifyContent: "center",
-  },
-  track: {
-    height: 8,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    overflow: "hidden",
-  },
-  fill: {
-    height: "100%",
   },
 });

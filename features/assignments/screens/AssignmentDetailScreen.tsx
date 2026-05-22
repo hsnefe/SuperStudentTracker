@@ -26,6 +26,8 @@ import {
 } from "@/features/assignments/lib/assignmentFormUtils";
 import { useAssignmentDetail } from "@/features/assignments/hooks/useAssignmentDetail";
 import { useUpdateAssignment } from "@/features/assignments/hooks/useUpdateAssignment";
+import { useTodos } from "@/features/todos/hooks/useTodos";
+import { useToggleTodoDone } from "@/features/todos/hooks/useToggleTodoDone";
 import { useTheme } from "@/hooks";
 import type { AssignmentPriority, UpdateAssignmentInput } from "@/types";
 
@@ -62,6 +64,12 @@ export function AssignmentDetailScreen() {
   const { spacing, typography } = useTheme();
   const detailQuery = useAssignmentDetail(routeCourseId, assignmentId);
   const updateMutation = useUpdateAssignment();
+  const todosQuery = useTodos({
+    assignmentId,
+    sortBy: "deadline",
+    sortDir: "asc",
+  });
+  const toggleTodo = useToggleTodoDone();
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<AssignmentFormValues | null>(null);
@@ -121,6 +129,13 @@ export function AssignmentDetailScreen() {
     persistValues(draft, () => setEditing(false));
   }, [draft, persistValues]);
 
+  const handleTodoToggle = useCallback(
+    (todoId: string, done: boolean) => {
+      toggleTodo.mutate({ todoId, done });
+    },
+    [toggleTodo],
+  );
+
   const busy = updateMutation.isPending;
   const titleValid = (draft?.title.trim().length ?? 0) > 0;
   const canSave = titleValid && !busy;
@@ -168,7 +183,12 @@ export function AssignmentDetailScreen() {
           onChangeDeadline={(deadline) => patchDraft({ deadline })}
         />
 
-        <AssignmentTodosSection variant={cardVariant} />
+        <AssignmentTodosSection
+          variant={cardVariant}
+          todos={todosQuery.data ?? []}
+          loading={todosQuery.isPending}
+          onToggle={handleTodoToggle}
+        />
       </>
     );
   };

@@ -8,40 +8,49 @@ import {
 } from "@/components/course/AssignmentStripCardBackground";
 import { stripCardMetaColor } from "@/components/course/assignmentStripCardTypography";
 import { GlassInteractionSurface } from "@/components/course/GlassInteractionSurface";
+import { AssignmentStripCardTodoBlock } from "@/components/assignment/AssignmentStripCardTodoBlock";
+import { HOME_STRIP_CARD_MIN_HEIGHT } from "@/components/home/HomeAssignmentStripCard";
+import { formatDeadlineDisplay } from "@/features/assignments/lib/assignmentFormUtils";
 import { AssignmentPriorityBadge } from "@/features/assignments/components/AssignmentPriorityBadge";
 import { useExpandNavigation } from "@/hooks";
-import type { Assignment, AssignmentPriority } from "@/types";
+import type { Assignment, AssignmentPriority, TodoItem } from "@/types";
 
 const ORANGE = "#FF653F";
 const CARD_RADIUS = STRIP_CARD_RADIUS;
+
+export const COURSE_STRIP_CARD_WIDTH = 168;
 
 type Props = {
   variant: AssignmentStripCardVariant;
   indexLabel: string;
   assignment: Assignment;
+  todos: TodoItem[];
   href: Href;
   width: number;
-  height: number;
   priorityDisabled?: boolean;
   onPriorityCycle?: (next: AssignmentPriority) => void;
+  onTodoComplete: (todoId: string) => void;
 };
 
 export function AssignmentStripCard({
   variant,
   indexLabel,
   assignment,
+  todos,
   href,
   width,
-  height,
   priorityDisabled,
   onPriorityCycle,
+  onTodoComplete,
 }: Props) {
   const rootRef = useRef<View>(null);
   const { pushExpand } = useExpandNavigation();
   const metaColor = stripCardMetaColor(variant);
 
+  const faceSize = { width, minHeight: HOME_STRIP_CARD_MIN_HEIGHT };
+
   const inner = (
-    <>
+    <View style={[styles.facePad, faceSize]}>
       <View style={styles.numRow}>
         <Text
           style={[
@@ -64,16 +73,22 @@ export function AssignmentStripCard({
       <Text style={[styles.cardTitle, variant === 1 && styles.textLight]} numberOfLines={2}>
         {assignment.title}
       </Text>
-      <Text
-        style={[styles.desc, variant === 1 ? styles.descLight : styles.descMuted]}
-        numberOfLines={2}
-      >
-        {assignment.description}
-      </Text>
-    </>
+      {assignment.description.trim() ? (
+        <Text
+          style={[styles.desc, variant === 1 ? styles.descLight : styles.descMuted]}
+          numberOfLines={2}
+        >
+          {assignment.description}
+        </Text>
+      ) : null}
+      <AssignmentStripCardTodoBlock
+        todos={todos}
+        labelColor={metaColor}
+        onTodoComplete={onTodoComplete}
+        dueLabel={`Due ${formatDeadlineDisplay(assignment.deadline)}`}
+      />
+    </View>
   );
-
-  const faceSize = { width, height };
 
   return (
     <View ref={rootRef} collapsable={false} style={faceSize}>
@@ -88,7 +103,7 @@ export function AssignmentStripCard({
         }
         accessibilityLabel={assignment.title}
       >
-        <View style={[styles.facePad, faceSize]}>{inner}</View>
+        {inner}
       </GlassInteractionSurface>
     </View>
   );
@@ -97,13 +112,15 @@ export function AssignmentStripCard({
 const styles = StyleSheet.create({
   facePad: {
     padding: 12,
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
+    gap: 6,
   },
   numRow: {
     flexDirection: "row",
     alignItems: "center",
-    flexWrap: "wrap",
+    justifyContent: "space-between",
     gap: 6,
+    minHeight: 22,
   },
   num: {
     fontSize: 18,
@@ -120,8 +137,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: "rgba(255,255,255,0.95)",
-    flex: 1,
-    marginVertical: 4,
   },
   textLight: {
     color: "#fff",
